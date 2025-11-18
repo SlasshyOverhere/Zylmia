@@ -23,3 +23,7 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+code.txt*
+TMDB_Service.md*
+DEPLOYMENT.md*
+API_KEY_SECURITY.md
