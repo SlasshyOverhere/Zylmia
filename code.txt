@@ -1,9 +1,8 @@
 import React, { useState, createContext, useContext, useEffect, useRef, useCallback, memo } from 'react';
 import * as THREE from 'three';
-import CryptoJS from 'crypto-js';
-import {
-  Search, Star, Film, Heart, Skull, Tv, ArrowRight, X, Info,
-  Clapperboard, Ghost, HeartCrack, Globe2, Loader2, Menu,
+import { 
+  Search, Star, Film, Heart, Skull, Tv, ArrowRight, X, Info, 
+  Clapperboard, Ghost, HeartCrack, Globe2, Loader2, Menu, 
   LayoutDashboard, Settings, LogOut, TrendingUp, Flame,
   Calendar, FileText, User, Clock, Zap, Link as LinkIcon,
   ChevronRight, ThumbsUp, ThumbsDown, MinusCircle, ExternalLink
@@ -63,8 +62,8 @@ Button.displayName = "Button";
 // --- GET STARTED BUTTON (REFRESH CONTENT) ---
 function GetStartedButton({ onClick, loading }) {
   return (
-    <Button
-      className="group relative overflow-hidden bg-indigo-600 text-white hover:bg-indigo-700 border border-indigo-500/20 shadow-lg shadow-indigo-900/20"
+    <Button 
+      className="group relative overflow-hidden bg-indigo-600 text-white hover:bg-indigo-700 border border-indigo-500/20 shadow-lg shadow-indigo-900/20" 
       size="lg"
       onClick={onClick}
       disabled={loading}
@@ -193,7 +192,7 @@ const ShaderCanvas = memo(({
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x000000, 0);
+    renderer.setClearColor(0x000000, 0); 
     container.appendChild(renderer.domElement);
 
     // Uniforms
@@ -350,12 +349,12 @@ function RadialOrbitalTimeline({ timelineData, onSelectVibe }) {
     const nodeIndex = timelineData.findIndex((item) => item.id === nodeId);
     const totalNodes = timelineData.length;
     const targetAngle = (nodeIndex / totalNodes) * 360;
-    setRotationAngle(270 - targetAngle);
+    setRotationAngle(270 - targetAngle); 
   };
 
   const calculateNodePosition = (index, total) => {
     const angle = ((index / total) * 360 + rotationAngle) % 360;
-    const radius = 220;
+    const radius = 220; 
     const radian = (angle * Math.PI) / 180;
 
     const x = radius * Math.cos(radian) + centerOffset.x;
@@ -404,14 +403,14 @@ function RadialOrbitalTimeline({ timelineData, onSelectVibe }) {
         >
           {/* Core / Center Shader */}
           <div className="absolute w-48 h-48 rounded-full flex items-center justify-center z-0 pointer-events-none">
-             <ShaderCanvas
+             <ShaderCanvas 
                color1="#4f46e5" // Indigo
                color2="#c026d3" // Fuchsia
-               rotationSpeed={0.4}
-               cloudDensity={3.5}
+               rotationSpeed={0.4} 
+               cloudDensity={3.5} 
              />
           </div>
-
+          
           {/* Core Rings */}
           <div className="absolute w-32 h-32 rounded-full border border-indigo-500/30 animate-ping opacity-20 pointer-events-none"></div>
 
@@ -472,7 +471,7 @@ function RadialOrbitalTimeline({ timelineData, onSelectVibe }) {
                 `}
                 >
                   <Icon size={isExpanded ? 20 : 18} />
-
+                  
                   {!isExpanded && (
                     <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
                          <span className={`text-[10px] font-bold uppercase tracking-widest ${isRelated ? "text-indigo-400" : "text-neutral-500"}`}>
@@ -501,7 +500,7 @@ function RadialOrbitalTimeline({ timelineData, onSelectVibe }) {
                     </CardHeader>
                     <CardContent className="text-sm text-neutral-400 space-y-4">
                       <p>{item.content}</p>
-
+                      
                       <div className="w-full h-1 bg-neutral-800 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
@@ -509,12 +508,11 @@ function RadialOrbitalTimeline({ timelineData, onSelectVibe }) {
                         ></div>
                       </div>
 
-                      <Button
+                      <Button 
                         onClick={(e) => {
                           e.stopPropagation();
                           onSelectVibe(item.originalData);
                         }}
-                        variant="secondary"
                         className="w-full gap-2 mt-2 bg-white text-black hover:bg-neutral-200"
                       >
                         Explore Movies <ArrowRight size={14} />
@@ -605,12 +603,7 @@ const MobileSidebar = ({ className, children, ...props }) => {
 const SidebarLink = ({ link, className, ...props }) => {
   const { open, animate } = useSidebar();
   return (
-    <button 
-      onClick={link.onClick} 
-      className={cn("flex items-center justify-start gap-2 group/sidebar py-3 px-2 hover:bg-neutral-800 rounded-lg transition-colors w-full", className)} 
-      {...props}
-      aria-label={link.label}
-    >
+    <button onClick={link.onClick} className={cn("flex items-center justify-start gap-2 group/sidebar py-3 px-2 hover:bg-neutral-800 rounded-lg transition-colors w-full", className)} {...props}>
       {link.icon}
       <motion.span
         animate={{ display: animate ? (open ? "inline-block" : "none") : "inline-block", opacity: animate ? (open ? 1 : 0) : 1 }}
@@ -652,14 +645,7 @@ const GlowButton = ({ children, onClick, className = "", disabled = false }) => 
 const NeonInput = ({ value, onChange, placeholder, type = "text" }) => (
   <div className="relative group w-full max-w-md">
     <div className="absolute -inset-1 bg-gradient-to-r from-pink-600 to-purple-600 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200" />
-    <input 
-      type={type} 
-      value={value} 
-      onChange={onChange} 
-      placeholder={placeholder} 
-      className="relative w-full bg-neutral-900 text-white border border-white/10 rounded-lg px-4 py-4 focus:outline-none focus:ring-2 focus:ring-purple-500/50 placeholder-neutral-500 transition-all" 
-      aria-label={placeholder}
-    />
+    <input type={type} value={value} onChange={onChange} placeholder={placeholder} className="relative w-full bg-neutral-900 text-white border border-white/10 rounded-lg px-4 py-4 focus:outline-none focus:ring-2 focus:ring-purple-500/50 placeholder-neutral-500 transition-all" />
   </div>
 );
 
@@ -672,40 +658,17 @@ const VIBES = [
   { id: 'romantic', label: 'Romance', icon: Heart, params: { with_genres: '10749' }, desc: "Love stories that melt your heart." },
   { id: 'heartbreak', label: 'Heartbreak', icon: HeartCrack, params: { with_genres: '18,10749' }, desc: "Sad movies for a good cry." },
   { id: 'action', label: 'Action', icon: Clapperboard, params: { with_genres: '28' }, desc: "High octane stunts and explosions." },
-  { id: 'scifi', label: 'Sci-Fi', icon: Zap, params: { with_genres: '878' }, desc: "Futuristic adventures and technological wonders." },
-  { id: 'comedy', label: 'Comedy', icon: Star, params: { with_genres: '35' }, desc: "Laughter and light-hearted entertainment." },
-  { id: 'drama', label: 'Drama', icon: Calendar, params: { with_genres: '18' }, desc: "Emotionally engaging storytelling." },
-  { id: 'thriller', label: 'Thriller', icon: Clock, params: { with_genres: '53' }, desc: "Suspenseful and gripping narratives." },
-  { id: 'documentary', label: 'Documentary', icon: FileText, params: { with_genres: '99' }, desc: "Real-world stories and facts." },
-  { id: 'tv_movie', label: 'TV Movie', icon: Tv, params: { with_genres: '10770' }, desc: "Movies made for television." },
-  { id: 'adventure', label: 'Adventure', icon: LinkIcon, params: { with_genres: '12' }, desc: "Exciting journeys and epic quests." },
-  { id: 'animation', label: 'Animation', icon: Star, params: { with_genres: '16' }, desc: "Animated features for all ages." }
+  { id: 'scifi', label: 'Sci-Fi', icon: Tv, params: { with_genres: '878' }, desc: "Futuristic worlds and tech." },
 ];
 
 // --- MAIN APP ---
 export default function Zylmia() {
-  const [apiKey, setApiKey] = useState(() => {
-    // Check ENV_API setting
-    const envApiEnabled = process.env.REACT_APP_ENV_API === 'true';
-
-    if (envApiEnabled) {
-      // Use API key from environment variable only
-      return process.env.REACT_APP_TMDB_API_KEY || '';
-    } else {
-      // Don't use environment variable, only use localStorage
-      return localStorage.getItem('tmdb_api_key') || '';
-    }
-  });
+  const [apiKey, setApiKey] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isPasswordAuthenticated, setIsPasswordAuthenticated] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // Password authentication state
-  const [password, setPassword] = useState('');
-
+  
   // App State
   const [view, setView] = useState('selection'); // selection, results
-  const [envApiInit, setEnvApiInit] = useState(false); // To track if we're initializing with env API
   const [selectedVibe, setSelectedVibe] = useState(null);
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -715,7 +678,7 @@ export default function Zylmia() {
   const [filteredReviews, setFilteredReviews] = useState([]);
   const [reviewFilter, setReviewFilter] = useState('all'); // 'all', 'good', 'neutral', 'bad'
   const [reviewsLoading, setReviewsLoading] = useState(false);
-
+  
   // Reviews Pagination State
   const [reviewsPage, setReviewsPage] = useState(1);
   const [reviewsTotalPages, setReviewsTotalPages] = useState(1);
@@ -737,71 +700,24 @@ export default function Zylmia() {
     originalData: v
   }));
 
-  // --- PASSWORD AUTHENTICATION ---
-  const handlePasswordSubmit = () => {
-    const passwordHash = process.env.REACT_APP_PASSWORD_HASH || '';
-    const inputHash = CryptoJS.SHA256(password).toString();
-
-    if (inputHash === passwordHash) {
-      setIsPasswordAuthenticated(true);
-      // Store in localStorage so user doesn't need to re-enter
-      localStorage.setItem('password_authenticated', 'true');
-    } else {
-      setError('Invalid password. Please try again.');
-    }
-  };
-
   // --- HANDLERS ---
   const handleKeySubmit = async () => {
-    // Check ENV_API setting
-    const envApiEnabled = process.env.REACT_APP_ENV_API === 'true';
-
-    if (envApiEnabled) {
-      // If ENV_API is enabled, we shouldn't be here - user shouldn't be able to input key
-      // But just in case, use the environment variable
-      const envApiKey = process.env.REACT_APP_TMDB_API_KEY || '';
-      if (!envApiKey) return;
-
-      setLoading(true);
-      setError('');
-      try {
-        const res = await fetch(`https://api.themoviedb.org/3/configuration?api_key=${envApiKey}`);
-        if (!res.ok) throw new Error('Invalid API Key from environment');
-        setApiKey(envApiKey);
-        setIsAuthenticated(true);
-      } catch (err) {
-        setError('Invalid API Key from environment. Please check your configuration.');
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      // ENV_API is disabled, use user input
-      if (!apiKey) return;
-      setLoading(true);
-      setError('');
-      try {
-        const res = await fetch(`https://api.themoviedb.org/3/configuration?api_key=${apiKey}`);
-        if (!res.ok) throw new Error('Invalid API Key');
-        setIsAuthenticated(true);
-        // Save to localStorage since ENV_API is disabled
-        localStorage.setItem('tmdb_api_key', apiKey);
-      } catch (err) {
-        setError('Invalid API Key. Please try again.');
-      } finally {
-        setLoading(false);
-      }
+    if (!apiKey) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`https://api.themoviedb.org/3/configuration?api_key=${apiKey}`);
+      if (!res.ok) throw new Error('Invalid API Key');
+      setIsAuthenticated(true);
+    } catch (err) {
+      setError('Invalid API Key. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   // Fetch 100 Movies (5 Pages x 20)
   const fetchMovies = async (vibe, offset = 0) => {
-    const effectiveApiKey = process.env.REACT_APP_TMDB_API_KEY || apiKey;
-    if (!effectiveApiKey) {
-      setError('API Key is required to fetch movies.');
-      setView('selection');
-      return;
-    }
-
     setLoading(true);
     setSelectedVibe(vibe);
     setMovies([]);
@@ -812,10 +728,10 @@ export default function Zylmia() {
       // Offset allows us to fetch pages 1-5, then 6-10, etc.
       const startPage = (offset * 5) + 1;
       const pages = [startPage, startPage + 1, startPage + 2, startPage + 3, startPage + 4];
-
+      
       const requests = pages.map(page => {
         let queryParams = new URLSearchParams({
-          api_key: effectiveApiKey,
+          api_key: apiKey,
           page: page.toString(),
           include_adult: 'false',
           sort_by: 'vote_average.desc',
@@ -826,13 +742,6 @@ export default function Zylmia() {
       });
 
       const responses = await Promise.all(requests);
-
-      // Check if any response is not ok
-      const allValid = responses.every(res => res.ok);
-      if (!allValid) {
-        throw new Error('Failed to fetch movies. Please try again.');
-      }
-
       const data = await Promise.all(responses.map(res => res.json()));
       let allMovies = data.flatMap(d => d.results || []);
       allMovies = Array.from(new Map(allMovies.map(m => [m.id, m])).values()); // Dedupe
@@ -855,12 +764,8 @@ export default function Zylmia() {
 
   // --- REVIEW LOGIC ---
   const fetchSingleReviewPage = async (movieId, page = 1) => {
-    const effectiveApiKey = process.env.REACT_APP_TMDB_API_KEY || apiKey;
-    if (!effectiveApiKey) {
-      throw new Error('API Key is required');
-    }
-    const res = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/reviews?api_key=${effectiveApiKey}&page=${page}`);
-    return await res.json();
+     const res = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/reviews?api_key=${apiKey}&page=${page}`);
+     return await res.json();
   };
 
   const openMovieDetails = async (movie) => {
@@ -870,32 +775,32 @@ export default function Zylmia() {
     setReviews([]);
     setFilteredReviews([]);
     setReviewsPage(1);
-
+    
     try {
         // Fetch first 3 pages in parallel to get a diverse set of reviews immediately
         const p1 = fetchSingleReviewPage(movie.id, 1);
         const p2 = fetchSingleReviewPage(movie.id, 2);
         const p3 = fetchSingleReviewPage(movie.id, 3);
-
+        
         const results = await Promise.all([p1, p2, p3]);
-
+        
         let combinedReviews = [];
         let maxPage = 1;
-
+        
         results.forEach(data => {
             if (data.results) {
                 combinedReviews = [...combinedReviews, ...data.results];
             }
             if (data.total_pages > maxPage) maxPage = data.total_pages;
         });
-
+        
         // Remove duplicates
         combinedReviews = Array.from(new Map(combinedReviews.map(item => [item.id, item])).values());
 
         setReviews(combinedReviews);
         setReviewsTotalPages(maxPage);
         setReviewsPage(3); // We fetched up to 3
-
+        
     } catch (e) {
       console.error("Failed to fetch reviews", e);
     } finally {
@@ -925,7 +830,7 @@ export default function Zylmia() {
   // Smart Filtering Logic
   useEffect(() => {
     if (!reviews) return;
-
+    
     let filtered = [...reviews];
     if (reviewFilter === 'good') {
       filtered = reviews.filter(r => r.author_details?.rating >= 7);
@@ -934,7 +839,7 @@ export default function Zylmia() {
     } else if (reviewFilter === 'bad') {
       filtered = reviews.filter(r => (r.author_details?.rating || 0) < 4);
     }
-
+    
     setFilteredReviews(filtered);
 
     // AUTO-SCRAPE: If filter yields few results (<3) and we have more pages, fetch automatically
@@ -950,83 +855,6 @@ export default function Zylmia() {
     setReviews([]);
   };
 
-  // Check for API key and password authentication on component mount
-  useEffect(() => {
-    // Check password protection setting
-    const passwordProtectionEnabled = process.env.REACT_APP_PASSWORD_PROTECTION === 'true';
-
-    // Check if password authentication is enabled
-    const passwordHash = process.env.REACT_APP_PASSWORD_HASH || '';
-    const isPasswordRequired = passwordProtectionEnabled && passwordHash !== '';
-
-    // If password authentication is required, check if user is already authenticated
-    if (isPasswordRequired) {
-      const isAlreadyAuthenticated = localStorage.getItem('password_authenticated') === 'true';
-      if (isAlreadyAuthenticated) {
-        setIsPasswordAuthenticated(true);
-      }
-    } else {
-      // If no password is required, set as authenticated
-      setIsPasswordAuthenticated(true);
-    }
-
-    // Check ENV_API setting
-    const envApiEnabled = process.env.REACT_APP_ENV_API === 'true';
-
-    if (envApiEnabled) {
-      // When ENV_API=true, only use environment variable
-      const envApiKey = process.env.REACT_APP_TMDB_API_KEY || null;
-      if (envApiKey) {
-        setApiKey(envApiKey);
-        // Don't set isAuthenticated here - let the envApiInit useEffect handle it
-      } else {
-        // If env API is enabled but no key is available, don't set authenticated
-        setIsAuthenticated(false);
-      }
-    } else {
-      // When ENV_API=false, only use localStorage (not environment variable)
-      const localStorageApiKey = localStorage.getItem('tmdb_api_key') || null;
-      if (localStorageApiKey) {
-        setApiKey(localStorageApiKey);
-        setIsAuthenticated(true);
-      } else {
-        // No API key available and ENV_API is disabled
-        setIsAuthenticated(false);
-      }
-    }
-
-    // Set the env API init flag to know if we should try to auto-authenticate
-    if (envApiEnabled && process.env.REACT_APP_TMDB_API_KEY) {
-      setEnvApiInit(true);
-    }
-  }, []);
-
-  // Handle environment API key authentication when envApiInit is set
-  useEffect(() => {
-    if (envApiInit) {
-      const envApiKey = process.env.REACT_APP_TMDB_API_KEY || '';
-      if (envApiKey) {
-        // Verify that the API key is valid
-        fetch(`https://api.themoviedb.org/3/configuration?api_key=${envApiKey}`)
-          .then(res => {
-            if (res.ok) {
-              setApiKey(envApiKey);
-              setIsAuthenticated(true);
-              setEnvApiInit(false); // Reset the init flag
-            } else {
-              throw new Error('Invalid API Key from environment');
-            }
-          })
-          .catch(err => {
-            setError('Invalid API Key from environment. Please check your configuration.');
-            setEnvApiInit(false); // Reset the init flag
-          });
-      } else {
-        setEnvApiInit(false); // Reset the init flag if no key
-      }
-    }
-  }, [envApiInit]);
-
   // Modified Sidebar Links - Removed Logout
   const navLinks = [
     { label: "Discover Vibes", href: "#", onClick: () => setView('selection'), icon: <LayoutDashboard className="text-neutral-200 h-5 w-5 flex-shrink-0" /> },
@@ -1034,13 +862,7 @@ export default function Zylmia() {
     { label: "Trending", href: "#", onClick: () => fetchMovies({ id: 'trending', label: 'Trending Now', params: { sort_by: 'popularity.desc' } }), icon: <TrendingUp className="text-neutral-200 h-5 w-5 flex-shrink-0" /> },
   ];
 
-  // Check password protection setting
-  const passwordProtectionEnabled = process.env.REACT_APP_PASSWORD_PROTECTION === 'true';
-  // Check ENV_API setting
-  const envApiEnabled = process.env.REACT_APP_ENV_API === 'true';
-
-  // If password protection is enabled and user is not authenticated
-  if (passwordProtectionEnabled && !isPasswordAuthenticated) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen w-full flex flex-col items-center justify-center bg-neutral-950 text-white relative overflow-hidden">
          <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none"></div>
@@ -1048,115 +870,18 @@ export default function Zylmia() {
          <div className="z-10 space-y-8 text-center p-4">
             <div className="space-y-4">
                <h1 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-neutral-500">Zylmia</h1>
-               <p className="text-lg text-neutral-400 max-w-lg mx-auto">Authentication Required</p>
+               <p className="text-lg text-neutral-400 max-w-lg mx-auto">Enter your TMDB API Key to unlock a premium, curated movie discovery experience.</p>
             </div>
             <div className="w-full max-w-md mx-auto space-y-4">
-              <NeonInput
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setError(''); // Clear error when user types
-                }}
-                placeholder="Enter Password"
-                type="password"
-              />
+              <NeonInput value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="Enter TMDB API Key" type="password" />
               {error && <p className="text-red-400 text-sm">{error}</p>}
-              <GlowButton
-                onClick={handlePasswordSubmit}
-                disabled={loading || !password}
-                className="w-full"
-              >
-                {loading ? <Loader2 className="animate-spin" /> : "Access Cinematic Universe"}
-              </GlowButton>
+              <GlowButton onClick={handleKeySubmit} disabled={loading || !apiKey} className="w-full">{loading ? <Loader2 className="animate-spin" /> : "Enter Cinematic Universe"}</GlowButton>
+              <p className="text-xs text-neutral-600"><a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noreferrer" className="underline hover:text-white">Get API Key</a></p>
             </div>
          </div>
          <style>{`@keyframes slow-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } .animate-slow-spin { animation: slow-spin 30s linear infinite; }`}</style>
       </div>
     );
-  }
-
-  // If not authenticated and either ENV_API is disabled or no API key is available
-  if (!isAuthenticated) {
-    // If ENV_API is enabled but no key is provided in env, show error or use the env key
-    if (envApiEnabled) {
-      const envApiKey = process.env.REACT_APP_TMDB_API_KEY || '';
-      if (!envApiKey) {
-        return (
-          <div className="min-h-screen w-full flex flex-col items-center justify-center bg-neutral-950 text-white relative overflow-hidden">
-             <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none"></div>
-             <div className="absolute -top-[50%] -left-[50%] w-[200%] h-[200%] animate-slow-spin opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-violet-900/40 via-neutral-950 to-neutral-950 blur-3xl pointer-events-none" />
-             <div className="z-10 space-y-8 text-center p-4">
-                <div className="space-y-4">
-                   <h1 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-neutral-500">Zylmia</h1>
-                   <p className="text-lg text-red-500 max-w-lg mx-auto">No API key found in environment variables!</p>
-                </div>
-                <div className="w-full max-w-md mx-auto space-y-4">
-                  <p className="text-sm text-neutral-400 text-center">
-                    Please set REACT_APP_TMDB_API_KEY in your .env file.
-                  </p>
-                  <GlowButton
-                    onClick={() => {
-                      // Try again - will check env again
-                      const newEnvApiKey = process.env.REACT_APP_TMDB_API_KEY || '';
-                      if (newEnvApiKey) {
-                        setApiKey(newEnvApiKey);
-                        handleKeySubmit();
-                      }
-                    }}
-                    className="w-full"
-                  >
-                    Retry
-                  </GlowButton>
-                </div>
-             </div>
-             <style>{`@keyframes slow-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } .animate-slow-spin { animation: slow-spin 30s linear infinite; }`}</style>
-          </div>
-        );
-      }
-      // If env API key exists and envApiInit hasn't been triggered yet, start the process
-      if (!envApiInit) {
-        setEnvApiInit(true);
-      }
-
-      // Show loading screen while initializing
-      return (
-        <div className="min-h-screen w-full flex flex-col items-center justify-center bg-neutral-950 text-white relative overflow-hidden">
-           <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none"></div>
-           <div className="absolute -top-[50%] -left-[50%] w-[200%] h-[200%] animate-slow-spin opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-violet-900/40 via-neutral-950 to-neutral-950 blur-3xl pointer-events-none" />
-           <div className="z-10 space-y-8 text-center p-4">
-              <div className="space-y-4">
-                 <h1 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-neutral-500">Zylmia</h1>
-                 <p className="text-lg text-neutral-400 max-w-lg mx-auto">Initializing with environment variables...</p>
-              </div>
-              <div className="flex justify-center">
-                <Loader2 className="animate-spin text-4xl text-indigo-500" />
-              </div>
-           </div>
-           <style>{`@keyframes slow-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } .animate-slow-spin { animation: slow-spin 30s linear infinite; }`}</style>
-        </div>
-      );
-    } else {
-      // ENV_API is disabled, show API key input
-      return (
-        <div className="min-h-screen w-full flex flex-col items-center justify-center bg-neutral-950 text-white relative overflow-hidden">
-           <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none"></div>
-           <div className="absolute -top-[50%] -left-[50%] w-[200%] h-[200%] animate-slow-spin opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-violet-900/40 via-neutral-950 to-neutral-950 blur-3xl pointer-events-none" />
-           <div className="z-10 space-y-8 text-center p-4">
-              <div className="space-y-4">
-                 <h1 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-neutral-500">Zylmia</h1>
-                 <p className="text-lg text-neutral-400 max-w-lg mx-auto">Enter your TMDB API Key to unlock a premium, curated movie discovery experience.</p>
-              </div>
-              <div className="w-full max-w-md mx-auto space-y-4">
-                <NeonInput value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="Enter TMDB API Key" type="password" />
-                {error && <p className="text-red-400 text-sm">{error}</p>}
-                <GlowButton onClick={handleKeySubmit} disabled={loading || !apiKey} className="w-full">{loading ? <Loader2 className="animate-spin" /> : "Enter Cinematic Universe"}</GlowButton>
-                <p className="text-xs text-neutral-600"><a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noreferrer noopener" className="underline hover:text-white">Get API Key</a></p>
-              </div>
-           </div>
-           <style>{`@keyframes slow-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } .animate-slow-spin { animation: slow-spin 30s linear infinite; }`}</style>
-        </div>
-      );
-    }
   }
 
   return (
@@ -1174,10 +899,10 @@ export default function Zylmia() {
           <div><SidebarLink link={{ label: "Settings", href: "#", icon: <Settings className="text-neutral-200 h-5 w-5 flex-shrink-0" /> }} /></div>
         </SidebarBody>
       </Sidebar>
-
+      
       <div className="flex-1 flex flex-col h-full overflow-hidden bg-neutral-950 relative">
          <div className="absolute inset-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay pointer-events-none"></div>
-
+         
          <main className="flex-1 overflow-y-auto p-4 md:p-8 z-10 scrollbar-hide">
             {/* VIEW: SELECTION (Replaced with Radial Timeline) */}
             {view === 'selection' && (
@@ -1197,13 +922,7 @@ export default function Zylmia() {
               <div className="animate-fade-in w-full max-w-7xl mx-auto">
                 <div className="flex items-center justify-between mb-8 sticky top-0 bg-neutral-950/80 backdrop-blur-lg py-4 z-20 border-b border-white/5">
                     <div className="flex items-center gap-4">
-                      <button 
-                        onClick={() => setView('selection')} 
-                        className="p-2 hover:bg-white/10 rounded-full transition"
-                        aria-label="Back to selection"
-                      >
-                        <ArrowRight className="rotate-180" />
-                      </button>
+                      <button onClick={() => setView('selection')} className="p-2 hover:bg-white/10 rounded-full transition"><ArrowRight className="rotate-180" /></button>
                       <div>
                         <h2 className="text-2xl font-bold text-white">{selectedVibe?.label}</h2>
                         <p className="text-sm text-neutral-400">Top 100 Highest Rated • {movies.length} Results</p>
@@ -1214,51 +933,16 @@ export default function Zylmia() {
                       <GetStartedButton onClick={handleRefresh} loading={loading} />
                     </div>
                 </div>
-                {error && (
-                  <div className="mb-4 p-4 bg-red-900/50 border border-red-700 rounded-lg text-red-200">
-                    {error}
-                  </div>
-                )}
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 pb-20">
                     {movies.map((movie, idx) => (
-                      <div 
-                        key={`${movie.id}-${idx}`} 
-                        onClick={() => openMovieDetails(movie)} 
-                        className="group relative bg-neutral-900 border border-white/5 rounded-xl overflow-hidden cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 aspect-[2/3]"
-                        role="button"
-                        tabIndex="0"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            openMovieDetails(movie);
-                          }
-                        }}
-                      >
-                        <div className="absolute top-2 right-2 z-10 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md text-xs font-bold text-yellow-400 flex items-center gap-1 border border-white/10">
-                          <Star size={10} fill="currentColor" /> {movie.vote_average?.toFixed(1) || 'N/A'}
-                        </div>
+                      <div key={`${movie.id}-${idx}`} onClick={() => openMovieDetails(movie)} className="group relative bg-neutral-900 border border-white/5 rounded-xl overflow-hidden cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 aspect-[2/3]">
+                        <div className="absolute top-2 right-2 z-10 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md text-xs font-bold text-yellow-400 flex items-center gap-1 border border-white/10"><Star size={10} fill="currentColor" /> {movie.vote_average.toFixed(1)}</div>
                         <div className="absolute top-2 left-2 z-10 bg-indigo-600/80 backdrop-blur-md px-2 py-1 rounded-md text-xs font-bold text-white border border-indigo-500/50">#{(pageOffset * 100) + idx + 1}</div>
-                        <img 
-                          src={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Image'} 
-                          alt={movie.title || 'Movie poster'} 
-                          className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" 
-                          loading="lazy" 
-                          onError={(e) => {
-                            e.target.src = 'https://via.placeholder.com/500x750?text=No+Image';
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                          <h3 className="text-white font-semibold text-sm line-clamp-2">{movie.title}</h3>
-                        </div>
+                        <img src={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Image'} alt={movie.title} className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" loading="lazy" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4"><h3 className="text-white font-semibold text-sm line-clamp-2">{movie.title}</h3></div>
                       </div>
                     ))}
                 </div>
-                
-                {movies.length === 0 && !loading && (
-                  <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <p className="text-xl text-neutral-400 mb-4">No movies found</p>
-                    <p className="text-neutral-500">Try selecting a different genre or refresh the content</p>
-                  </div>
-                )}
               </div>
             )}
 
@@ -1273,46 +957,12 @@ export default function Zylmia() {
 
       <AnimatePresence>
       {selectedMovie && (
-        <motion.div 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
-          exit={{ opacity: 0 }} 
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-8"
-          aria-modal="true"
-          role="dialog"
-        >
-          <div 
-            className="absolute inset-0 bg-black/80 backdrop-blur-md" 
-            onClick={closeModal} 
-            aria-label="Close modal"
-            role="button"
-            tabIndex="0"
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') closeModal();
-            }}
-          />
-          <motion.div 
-            initial={{ scale: 0.9, opacity: 0 }} 
-            animate={{ scale: 1, opacity: 1 }} 
-            exit={{ scale: 0.9, opacity: 0 }} 
-            className="relative w-full max-w-5xl h-full max-h-[85vh] bg-neutral-900 rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col md:flex-row"
-          >
-            <button 
-              onClick={closeModal} 
-              className="absolute top-4 right-4 z-20 p-2 bg-black/50 rounded-full text-white hover:bg-white hover:text-black transition"
-              aria-label="Close details"
-            >
-              <X size={20} />
-            </button>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-8">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={closeModal} />
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-5xl h-full max-h-[85vh] bg-neutral-900 rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col md:flex-row">
+            <button onClick={closeModal} className="absolute top-4 right-4 z-20 p-2 bg-black/50 rounded-full text-white hover:bg-white hover:text-black transition"><X size={20} /></button>
             <div className="w-full md:w-5/12 h-64 md:h-full relative bg-neutral-800">
-               <img 
-                 src={selectedMovie.poster_path ? `https://image.tmdb.org/t/p/original${selectedMovie.poster_path}` : 'https://via.placeholder.com/500x750'} 
-                 alt={selectedMovie.title} 
-                 className="w-full h-full object-cover" 
-                 onError={(e) => {
-                   e.target.src = 'https://via.placeholder.com/500x750?text=No+Image';
-                 }}
-               />
+               <img src={selectedMovie.poster_path ? `https://image.tmdb.org/t/p/original${selectedMovie.poster_path}` : 'https://via.placeholder.com/500x750'} alt={selectedMovie.title} className="w-full h-full object-cover" />
                <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-transparent to-transparent md:bg-gradient-to-r" />
             </div>
             <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-6 bg-neutral-900/50">
@@ -1320,52 +970,23 @@ export default function Zylmia() {
                 <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">{selectedMovie.title}</h2>
                 <div className="flex flex-wrap gap-3 text-sm text-neutral-400 mb-4">
                   <span className="px-2 py-1 bg-white/5 rounded-md border border-white/10">{selectedMovie.release_date?.split('-')[0]}</span>
-                  <span className="flex items-center gap-1 text-yellow-400">
-                    <Star size={14} fill="currentColor" /> {selectedMovie.vote_average?.toFixed(1) || 'N/A'}
-                  </span>
-                  <span className="px-2 py-1 bg-white/5 rounded-md border border-white/10">{selectedMovie.vote_count || 0} votes</span>
+                  <span className="flex items-center gap-1 text-yellow-400"><Star size={14} fill="currentColor" /> {selectedMovie.vote_average.toFixed(1)}</span>
+                  <span className="px-2 py-1 bg-white/5 rounded-md border border-white/10">{selectedMovie.vote_count} votes</span>
                 </div>
               </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <Info size={18} className="text-indigo-500" /> Overview
-                </h3>
-                <p className="text-neutral-300 leading-relaxed text-sm md:text-base">
-                  {selectedMovie.overview || "No description available."}
-                </p>
-              </div>
-
+              <div className="space-y-2"><h3 className="text-lg font-semibold text-white flex items-center gap-2"><Info size={18} className="text-indigo-500" /> Overview</h3><p className="text-neutral-300 leading-relaxed text-sm md:text-base">{selectedMovie.overview || "No description available."}</p></div>
+              
               {/* REVIEWS SECTION */}
               <div className="pt-6 border-t border-white/5">
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                   <h3 className="text-lg font-semibold text-white">User Reviews</h3>
-
+                  
                   {/* Review Filters */}
                   <div className="flex items-center gap-2 bg-neutral-800/50 p-1 rounded-lg border border-white/5">
-                    <button 
-                      onClick={() => setReviewFilter('all')} 
-                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${reviewFilter === 'all' ? 'bg-indigo-600 text-white' : 'text-neutral-400 hover:text-white'}`}
-                    >
-                      All
-                    </button>
-                    <button 
-                      onClick={() => setReviewFilter('good')} 
-                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${reviewFilter === 'good' ? 'bg-green-600/20 text-green-400 border border-green-600/30' : 'text-neutral-400 hover:text-green-400'}`}
-                    >
-                      <ThumbsUp size={12} /> Good
-                    </button>
-                    <button 
-                      onClick={() => setReviewFilter('neutral')} 
-                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${reviewFilter === 'neutral' ? 'bg-yellow-600/20 text-yellow-400 border border-yellow-600/30' : 'text-neutral-400 hover:text-yellow-400'}`}
-                    >
-                      <MinusCircle size={12} /> Neutral
-                    </button>
-                    <button 
-                      onClick={() => setReviewFilter('bad')} 
-                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${reviewFilter === 'bad' ? 'bg-red-600/20 text-red-400 border border-red-600/30' : 'text-neutral-400 hover:text-red-400'}`}
-                    >
-                      <ThumbsDown size={12} /> Bad
-                    </button>
+                    <button onClick={() => setReviewFilter('all')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${reviewFilter === 'all' ? 'bg-indigo-600 text-white' : 'text-neutral-400 hover:text-white'}`}>All</button>
+                    <button onClick={() => setReviewFilter('good')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${reviewFilter === 'good' ? 'bg-green-600/20 text-green-400 border border-green-600/30' : 'text-neutral-400 hover:text-green-400'}`}><ThumbsUp size={12} /> Good</button>
+                    <button onClick={() => setReviewFilter('neutral')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${reviewFilter === 'neutral' ? 'bg-yellow-600/20 text-yellow-400 border border-yellow-600/30' : 'text-neutral-400 hover:text-yellow-400'}`}><MinusCircle size={12} /> Neutral</button>
+                    <button onClick={() => setReviewFilter('bad')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${reviewFilter === 'bad' ? 'bg-red-600/20 text-red-400 border border-red-600/30' : 'text-neutral-400 hover:text-red-400'}`}><ThumbsDown size={12} /> Bad</button>
                   </div>
                 </div>
 
@@ -1400,10 +1021,7 @@ export default function Zylmia() {
                   <div className="flex flex-col items-center justify-center py-8 text-center">
                       <p className="text-neutral-500 italic mb-2">No reviews found for this filter in the current batch.</p>
                       {reviewsPage < reviewsTotalPages && (
-                         <button 
-                           onClick={loadMoreReviews} 
-                           className="text-xs text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1"
-                         >
+                         <button onClick={loadMoreReviews} className="text-xs text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1">
                            Try loading more reviews from page {reviewsPage + 1}... <Loader2 size={10} className="animate-spin" />
                          </button>
                       )}
@@ -1412,10 +1030,10 @@ export default function Zylmia() {
 
                 {/* READ MORE EXTERNAL BUTTON */}
                 <div className="mt-6 flex justify-center">
-                  <a
-                    href={`https://www.themoviedb.org/movie/${selectedMovie.id}/reviews`}
-                    target="_blank"
-                    rel="noreferrer noopener"
+                  <a 
+                    href={`https://www.themoviedb.org/movie/${selectedMovie.id}/reviews`} 
+                    target="_blank" 
+                    rel="noreferrer"
                     className="flex items-center gap-2 text-sm font-medium text-neutral-400 hover:text-white transition-colors px-4 py-2 rounded-lg hover:bg-white/5"
                   >
                     Read all reviews on TMDB <ExternalLink size={14} />

@@ -1,145 +1,233 @@
-# CineVibe Movie Picker
+# Zylmia Movie Discovery
 
-An interactive, visually stunning movie discovery application with a celestial-themed interface that helps users explore movies by different vibes and genres.
+<div align="center">
+  <h1>🌌 Zylmia Movie Discovery 🎬</h1>
+  <p><b>An immersive, visually stunning movie discovery experience</b></p>
+  
+  [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+  [![Three.js](https://img.shields.io/badge/Three.js-000000?style=for-the-badge&logo=threedotjs&logoColor=white)](https://threejs.org/)
+  [![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
+  
+</div>
 
-## Features
+<div align="center">
+  <sub>Built with ❤️ and ☕ | 
+  <i>Fully vibecoded with 0 manual code write/read</i>
+</sub>
+</div>
 
-- **Interactive Visualization**: Explore movies through an animated radial timeline with celestial shader effects
-- **Multiple Genres**: Browse movies across various vibes including Hollywood, Bollywood, Horror, Romance, Action, Sci-Fi, and more
-- **Detailed Reviews**: Read user reviews with filtering options (Good, Neutral, Bad)
-- **Responsive Design**: Works seamlessly across desktop, tablet, and mobile devices
-- **Performance Optimized**: Efficient loading and rendering for smooth user experience
+---
 
-## Prerequisites
+## 🌟 Overview
 
-- Node.js (version 14 or higher)
-- npm or yarn package manager
+**Zylmia** is a cutting-edge, celestial-themed movie discovery application that transforms the way users explore and discover movies. With its stunning 3D visuals, interactive radial timeline, and intuitive filtering system, Zylmia provides an immersive cinematic journey like no other.
 
-## Installation
+<div align="center">
+  <img src="https://placehold.co/800x400/1a1a1a/ffffff?text=Zylmia+Preview" alt="Zylmia Preview" />
+  
+  *Zylmia's celestial interface brings movie discovery to life*
+</div>
 
-1. Clone or download this repository to your local machine
-2. Navigate to the project directory:
+## ✨ Features
 
-```bash
-cd movie_picker
-```
+### 🎨 Visual Experience
+- **3D Shader Effects**: Celestial orbs with dynamic lighting and atmospheric effects
+- **Interactive Radial Timeline**: Explore genres through an orbital navigation system
+- **Animated Transitions**: Smooth, polished animations powered by Framer Motion
+- **Responsive Design**: Seamless experience across all devices
 
-3. Install dependencies:
+### 🎬 Discovery System
+- **Multiple Vibes**: Browse Hollywood, Bollywood, Horror, Romance, Action, Sci-Fi, Comedy, Drama, and more
+- **Smart Filtering**: Advanced review filtering by rating (Good/Neutral/Bad)
+- **Top-Rated Focus**: Curated lists of highest-rated films in each category
+- **Detailed Reviews**: Comprehensive user reviews with sentiment analysis
 
-```bash
-npm install
-```
+### 🔐 Security Features
+- **Environment Variable API Keys**: Secure TMDB API integration via environment variables
+- **Password Protection**: Optional password authentication using SHA256 hashing
+- **Local Storage**: Secure client-side storage for API keys
 
-or if using yarn:
+## 🛠️ Tech Stack
 
-```bash
-yarn install
-```
+- **[React](https://reactjs.org/)** - JavaScript library for building user interfaces
+- **[Three.js](https://threejs.org/)** - 3D library for creating celestial shader effects
+- **[Framer Motion](https://www.framer.com/motion/)** - Production-ready motion library
+- **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework
+- **[Lucide React](https://lucide.dev/)** - Beautiful, consistent icon library
+- **[Crypto-JS](https://github.com/brix/crypto-js)** - Cryptographic algorithms for security
 
-4. Create a `.env` file in the root directory (optional for local development):
+## 🚀 Getting Started
 
-```env
-REACT_APP_TMDB_API_KEY=your_tmdb_api_key_here
-```
+### Prerequisites
+- [Node.js](https://nodejs.org/) (version 14 or higher)
+- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/) package manager
 
-## Configuration
+### Installation
 
-1. Get your free API key from [The Movie Database (TMDb)](https://www.themoviedb.org/settings/api)
-2. The app will prompt you for your API key when you first launch it
-3. Optionally, you can set the API key in environment variables as shown in the installation section
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-username/zylmia-movie-discovery.git
+   cd zylmia-movie-discovery
+   ```
 
-## Running the Application
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
 
-To run the application in development mode:
+3. **Create environment variables** (optional but recommended)
+   ```env
+   # TMDB API Key - required for the application to work
+   REACT_APP_TMDB_API_KEY=your_tmdb_api_key_here
+
+   # Password hash for authentication (optional - leave empty to disable password protection)
+   # Generate using: node generate_password_hash.js your_password
+   REACT_APP_PASSWORD_HASH=
+
+   # Feature flags - set to true or false to enable/disable features
+   # Password protection - if true, requires password before API key entry
+   REACT_APP_PASSWORD_PROTECTION=false
+
+   # ENV API - if true, uses API key from environment variable; if false, prompts user
+   REACT_APP_ENV_API=false
+   ```
+
+### Configuration
+
+1. **Get a free TMDB API key** from [The Movie Database (TMDb)](https://www.themoviedb.org/settings/api)
+2. **Set your API key** in the `.env` file or enter it in the app on first launch
+3. **(Optional) Enable password protection:**
+   - Generate a hash: `node generate_password_hash.js your_password`
+   - Add to `.env`: `REACT_APP_PASSWORD_HASH=generated_hash_here`
+
+### Running the Application
 
 ```bash
 npm start
 ```
-
-or with yarn:
-
+or
 ```bash
 yarn start
 ```
 
-The application will start on [http://localhost:3000](http://localhost:3000)
+The application will be available at [http://localhost:3000](http://localhost:3000)
 
-## Building for Production
+## 🔐 Security Features
 
-To create a production build:
+### API Key Storage
+- **Environment Variables**: Set `REACT_APP_TMDB_API_KEY` in your `.env` file
+- **Priority System**: Environment variable > localStorage > user input
+- **Automatic Detection**: App prioritizes environment variables when available
+
+### Feature Flags
+The application includes configurable features through environment variables:
+
+#### Password Protection
+- **Variable**: `REACT_APP_PASSWORD_PROTECTION=true/false`
+- **Default**: `false`
+- **Description**: When `true`, requires password before API key entry
+- **Implementation**:
+  1. Generate a password hash: `node generate_password_hash.js your_password`
+  2. Add to `.env`: `REACT_APP_PASSWORD_HASH=generated_hash_here`
+  3. Set `REACT_APP_PASSWORD_PROTECTION=true` to enable
+  4. If disabled or no hash is set, password protection is bypassed
+
+#### ENV API Usage
+- **Variable**: `REACT_APP_ENV_API=true/false`
+- **Default**: `false`
+- **Description**: When `true`, uses API key from environment variable only; when `false`, prompts user for API key
+- **Implementation**:
+  1. Set `REACT_APP_ENV_API=true` to enforce environment variable usage
+  2. Set `REACT_APP_TMDB_API_KEY=your_key_here` for the API key
+  3. When enabled, the app will auto-authenticate with the environment key
+  4. When disabled, users will be prompted to enter their API key
+
+### SHA256 Hashing
+- Uses CryptoJS library for secure client-side hashing
+- Passwords never stored in plain text
+- Authentication status stored in localStorage after validation
+
+## 📦 Building for Production
 
 ```bash
 npm run build
 ```
-
-or with yarn:
-
+or
 ```bash
 yarn build
 ```
 
-This will create a `build` directory with optimized assets ready for deployment to a web server.
+This creates an optimized `build` directory ready for deployment.
 
-## Deployment
+## 🚀 Deployment
 
 ### Deploy to Netlify
-1. Build the project with `npm run build`
-2. Drag and drop the `build` folder to Netlify
+1. Build the project: `npm run build`
+2. Drag and drop the `build` folder to Netlify dashboard
 
 ### Deploy to Vercel
 1. Install Vercel CLI: `npm i -g vercel`
-2. Run `vercel` from the project directory
-3. Follow the prompts to complete deployment
+2. Run `vercel` from project directory
+3. Follow prompts for configuration
 
 ### Deploy to GitHub Pages
 1. Update `homepage` in `package.json` to your GitHub Pages URL
 2. Run `npm run build`
 3. Push the `build` folder to the `gh-pages` branch
 
-## Technology Stack
+## 🎯 Usage
 
-- **React**: JavaScript library for building user interfaces
-- **Three.js**: 3D library for creating the celestial shader effects
-- **Framer Motion**: Animation library for smooth transitions
-- **Lucide React**: Icon library with consistent design
-- **Tailwind CSS**: Utility-first CSS framework for styling
+1. **Select a Vibe**: Choose from the radial timeline of movie genres
+2. **Explore**: View top-rated movies in your selected category
+3. **Discover**: Click on any movie to see detailed information and reviews
+4. **Filter**: Use sentiment filters to find reviews that match your preferences
+5. **Refresh**: Get new content with the "Refresh Content" button
 
-## Security
+## 🛡️ Security Notes
 
-- API keys are stored locally in the browser's localStorage (not sent to any server)
-- All API calls are made directly from the browser to TMDB's servers
-- No user data is stored on any backend
+- All API calls are made directly from browser to TMDB's servers
+- No user data is stored on external backends
+- LocalStorage is used only for API keys and preferences
+- Passwords are SHA256 hashed before validation
 
-## Troubleshooting
+## 🤝 Contributing
 
-### Common Issues:
+We welcome contributions! Here's how you can help:
 
-1. **API Key Not Working**: Ensure your TMDB API key is valid and has the necessary permissions
-2. **Images Not Loading**: This is normal for some titles that don't have posters in the TMDB database
-3. **Performance Issues**: The 3D shader effects may impact performance on older devices; this is expected
+1. **Fork the repository**
+2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
+3. **Make your changes**
+4. **Commit** (`git commit -m 'Add amazing feature'`)
+5. **Push to branch** (`git push origin feature/amazing-feature`)
+6. **Open a Pull Request**
 
-### Getting Help:
+## 🐛 Troubleshooting
 
-If you encounter issues, please:
-1. Verify your API key is correct
-2. Check browser console for specific error messages
-3. Ensure you're using a modern browser with WebGL support
+### Common Issues
+- **API Key Not Working**: Verify your TMDB API key has necessary permissions
+- **Images Not Loading**: Some titles may not have posters in TMDB database
+- **Performance Issues**: 3D effects may impact performance on older devices
+- **Port Already in Use**: Try `npm start -- --port 3001` for alternative port
 
-## Contributing
+### Getting Help
+1. Check browser console for specific error messages
+2. Ensure you're using a modern browser with WebGL support
+3. Verify your API key is correctly set in environment variables
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Commit your changes (`git commit -m 'Add amazing feature'`)
-5. Push to the branch (`git push origin feature/amazing-feature`)
-6. Open a Pull Request
-
-## License
+## 📄 License
 
 This project is open source and available under the [MIT License](LICENSE).
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
-- Data provided by [The Movie Database (TMDb)](https://www.themoviedb.org/)
-- Icons by [Lucide React](https://lucide.dev/)
-- Special thanks to the open-source community for the libraries used in this project
+- **Data provided by** [The Movie Database (TMDb)](https://www.themoviedb.org/)
+- **Icons by** [Lucide React](https://lucide.dev/)
+- **Inspiration from** the creative coding community
+
+<div align="center">
+  <h3>💫 Enjoy your cosmic movie journey with Zylmia! 🌠</h3>
+  <p><i>Fully vibecoded with 0 manual code write/read</i></p>
+</div>
+</div>
