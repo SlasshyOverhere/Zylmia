@@ -11,7 +11,7 @@
 </div>
 
 <div align="center">
-  <sub>Built with ❤️ and ☕ | 
+  <sub>Built with ❤️ and ☕ |
   <i>Fully vibecoded with 0 manual code write/read</i>
 </sub>
 </div>
@@ -23,9 +23,9 @@
 **Zylmia** is a cutting-edge, celestial-themed movie discovery application that transforms the way users explore and discover movies. With its stunning 3D visuals, interactive radial timeline, and intuitive filtering system, Zylmia provides an immersive cinematic journey like no other.
 
 <div align="center">
-  <img src="https://placehold.co/800x400/1a1a1a/ffffff?text=Zylmia+Preview" alt="Zylmia Preview" />
-  
-  *Zylmia's celestial interface brings movie discovery to life*
+  <img src="https://github.com/SlasshyOverhere/Zylmia/raw/main/zylmia.jpg" alt="Zylmia UI Screenshot" />
+  <br />
+  <i>Real screenshot: orbital genre system in action</i>
 </div>
 
 ## ✨ Features
@@ -69,27 +69,22 @@
    git clone https://github.com/your-username/zylmia-movie-discovery.git
    cd zylmia-movie-discovery
    ```
-
 2. **Install dependencies**
    ```bash
    npm install
    # or
    yarn install
    ```
-
 3. **Create environment variables** (optional but recommended)
    ```env
    # TMDB API Key - required for the application to work
    REACT_APP_TMDB_API_KEY=your_tmdb_api_key_here
-
    # Password hash for authentication (optional - leave empty to disable password protection)
    # Generate using: node generate_password_hash.js your_password
    REACT_APP_PASSWORD_HASH=
-
    # Feature flags - set to true or false to enable/disable features
    # Password protection - if true, requires password before API key entry
    REACT_APP_PASSWORD_PROTECTION=false
-
    # ENV API - if true, uses API key from environment variable; if false, prompts user
    REACT_APP_ENV_API=false
    ```
@@ -186,7 +181,6 @@ This creates an optimized `build` directory ready for deployment.
 5. **Refresh**: Get new content with the "Refresh Content" button
 
 ## 🛡️ Security Notes
-
 - All API calls are made directly from browser to TMDB's servers
 - No user data is stored on external backends
 - LocalStorage is used only for API keys and preferences
@@ -221,7 +215,6 @@ We welcome contributions! Here's how you can help:
 This project is open source and available under the [MIT License](LICENSE).
 
 ## 🙏 Acknowledgments
-
 - **Data provided by** [The Movie Database (TMDb)](https://www.themoviedb.org/)
 - **Icons by** [Lucide React](https://lucide.dev/)
 - **Inspiration from** the creative coding community
@@ -229,5 +222,4 @@ This project is open source and available under the [MIT License](LICENSE).
 <div align="center">
   <h3>💫 Enjoy your cosmic movie journey with Zylmia! 🌠</h3>
   <p><i>Fully vibecoded with 0 manual code write/read</i></p>
-</div>
 </div>
