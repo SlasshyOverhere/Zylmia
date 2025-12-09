@@ -710,13 +710,77 @@ input:focus-visible {
    MEDIA QUERIES
    ============================================ */
 
+/* Mobile devices */
 @media (max-width: 768px) {
   :root {
     font-size: 14px;
   }
 
+  html {
+    /* Prevent iOS bounce scroll */
+    overscroll-behavior-y: none;
+  }
+
+  body {
+    /* Safe area insets for notched devices */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    /* Smoother scrolling on mobile */
+    -webkit-overflow-scrolling: touch;
+  }
+
   .glass {
     backdrop-filter: blur(10px);
+  }
+
+  /* Touch-friendly tap targets */
+  button,
+  a,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Disable hover effects on touch devices */
+  @media (hover: none) {
+    .card:hover {
+      transform: none;
+      border-color: var(--color-border);
+    }
+
+    .glow-hover:hover {
+      box-shadow: none;
+    }
+
+    .btn-primary:hover {
+      transform: none;
+    }
+  }
+
+  /* Smaller scrollbar on mobile */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  /* Full-width modal on mobile */
+  .modal-content {
+    width: 100%;
+    max-height: 95vh;
+    border-radius: 1rem 1rem 0 0;
+  }
+
+  /* Compact content cards on mobile */
+  .content-card {
+    border-radius: 6px;
+  }
+
+  /* Reduce animation complexity on mobile for performance */
+  .animate-float,
+  .animate-spin-slow {
+    animation: none;
   }
 }
 
@@ -762,4 +826,48 @@ input:focus-visible {
   .glass {
     background: rgba(15, 15, 15, 0.9);
   }
+}
+
+/* ============================================
+   PERFORMANCE OPTIMIZATIONS - Content Cards
+   ============================================ */
+
+/* GPU acceleration for smooth scrolling */
+.content-card {
+  contain: layout style;
+  will-change: auto;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.content-card:hover {
+  will-change: transform;
+}
+
+/* Optimize image loading */
+.content-card img {
+  will-change: auto;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Smooth grid rendering */
+.grid {
+  contain: layout;
+}
+
+/* Optimize animations during scroll */
+@media (prefers-reduced-motion: no-preference) {
+  .content-card {
+    transition: transform 0.15s ease-out;
+  }
+
+  .content-card:hover {
+    transition: transform 0.1s ease-out;
+  }
+}
+
+/* Reduce paint complexity */
+.content-card * {
+  backface-visibility: hidden;
 }
