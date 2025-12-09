@@ -1,1222 +1,1043 @@
-import React, { useState, createContext, useContext, useEffect, useRef, useCallback, memo } from 'react';
-import * as THREE from 'three';
-import {
-  Search, Star, Film, Heart, Skull, Tv, ArrowRight, X, Info,
-  Clapperboard, Ghost, HeartCrack, Globe2, Loader2, Menu,
-  LayoutDashboard, Settings, LogOut, TrendingUp, Flame,
-  Calendar, FileText, User, Clock, Zap, Link as LinkIcon,
-  ChevronRight, ThumbsUp, ThumbsDown, MinusCircle, ExternalLink
-} from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Home, Film, Tv, Sparkles, Heart, Globe2, Star, Info, X,
+  ArrowRight, ChevronDown, Flame, Calendar, Users, Clock,
+  Building2, Languages, DollarSign, PlayCircle, ExternalLink, TrendingUp
+} from 'lucide-react';
+import PageIntroAnimation from './components/ui/page-intro-animation';
+import DetailIntroAnimation from './components/ui/detail-intro-animation';
 
 /**
- * UTILITIES
+ * UTILITY FUNCTIONS
  */
 function cn(...classes) {
-  return classes.filter(Boolean).join(" ");
+  return classes.filter(Boolean).join(' ');
 }
 
-/**
- * UI COMPONENTS
- */
+const buildVideasyUrl = (type, id, season = null, episode = null) => {
+  const color = '8B5CF6'; // violet
+  if (type === 'movie') {
+    return `https://player.videasy.net/movie/${id}?color=${color}&overlay=true`;
+  } else {
+    return `https://player.videasy.net/tv/${id}/${season || 1}/${episode || 1}?color=${color}&nextEpisode=true&autoplayNextEpisode=true&episodeSelector=true&overlay=true`;
+  }
+};
 
-// --- BADGE ---
-const Badge = ({ className, variant = "default", ...props }) => {
+const openInVideasy = (type, id, season = null, episode = null) => {
+  window.open(buildVideasyUrl(type, id, season, episode), '_blank');
+};
+
+/**
+ * CONTENT CATEGORIES CONFIGURATION
+ */
+const CONTENT_CATEGORIES = {
+  movies: {
+    id: 'movies',
+    label: 'Movies',
+    icon: Film,
+    type: 'movie',
+    gradient: 'from-violet-600 via-purple-600 to-indigo-600',
+    description: 'Blockbusters, classics, and hidden gems',
+    endpoints: {
+      trending: '/trending/movie/day',
+      discover: '/discover/movie'
+    }
+  },
+  tvshows: {
+    id: 'tvshows',
+    label: 'TV Shows',
+    icon: Tv,
+    type: 'tv',
+    gradient: 'from-cyan-600 via-blue-600 to-indigo-600',
+    description: 'Binge-worthy series and limited editions',
+    endpoints: {
+      trending: '/trending/tv/day',
+      discover: '/discover/tv'
+    }
+  },
+  anime: {
+    id: 'anime',
+    label: 'Anime',
+    icon: Sparkles,
+    type: 'tv',
+    gradient: 'from-pink-600 via-rose-600 to-fuchsia-600',
+    description: 'Japanese animation masterpieces',
+    params: { with_genres: '16', with_original_language: 'ja' },
+    endpoints: {
+      trending: '/discover/tv',
+      discover: '/discover/tv'
+    }
+  },
+  kdrama: {
+    id: 'kdrama',
+    label: 'K-Drama',
+    icon: Heart,
+    type: 'tv',
+    gradient: 'from-emerald-600 via-teal-600 to-cyan-600',
+    description: 'Korean drama sensations',
+    params: { with_original_language: 'ko' },
+    endpoints: {
+      trending: '/discover/tv',
+      discover: '/discover/tv'
+    }
+  },
+  jdrama: {
+    id: 'jdrama',
+    label: 'J-Drama',
+    icon: Globe2,
+    type: 'tv',
+    gradient: 'from-amber-600 via-orange-600 to-red-600',
+    description: 'Japanese drama excellence',
+    params: { with_original_language: 'ja', without_genres: '16' },
+    endpoints: {
+      trending: '/discover/tv',
+      discover: '/discover/tv'
+    }
+  }
+};
+
+/**
+ * BASIC UI COMPONENTS
+ */
+const Badge = ({ children, className, variant = 'default' }) => {
   const variants = {
-    default: "border-transparent bg-indigo-600 text-white hover:bg-indigo-700",
-    secondary: "border-transparent bg-neutral-100 text-neutral-900 hover:bg-neutral-200",
-    destructive: "border-transparent bg-red-600 text-white hover:bg-red-700",
-    outline: "text-neutral-200 border-neutral-700",
+    default: 'bg-violet-600/20 text-violet-300 border-violet-500/30',
+    secondary: 'bg-white/10 text-white/80 border-white/20'
   };
   return (
-    <div className={cn("inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2", variants[variant], className)} {...props} />
+    <span className={cn(
+      'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border backdrop-blur-sm',
+      variants[variant],
+      className
+    )}>
+      {children}
+    </span>
   );
 };
 
-// --- BUTTON ---
-const Button = React.forwardRef(({ className, variant = "default", size = "default", ...props }, ref) => {
+const Button = ({ children, onClick, className, variant = 'primary', disabled }) => {
   const variants = {
-    default: "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-500/20",
-    destructive: "bg-red-500 text-white hover:bg-red-600",
-    outline: "border border-neutral-700 bg-transparent hover:bg-neutral-800 text-neutral-200",
-    secondary: "bg-neutral-800 text-neutral-200 hover:bg-neutral-700",
-    ghost: "hover:bg-neutral-800 text-neutral-200",
-    link: "text-indigo-400 underline-offset-4 hover:underline",
-  };
-  const sizes = {
-    default: "h-10 px-4 py-2",
-    sm: "h-9 rounded-md px-3",
-    lg: "h-11 rounded-md px-8",
-    icon: "h-10 w-10",
+    primary: 'bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:shadow-[0_0_30px_rgba(139,92,246,0.4)]',
+    secondary: 'bg-white/10 text-white hover:bg-white/20 border border-white/20',
+    ghost: 'text-white/70 hover:text-white hover:bg-white/10'
   };
   return (
     <button
-      ref={ref}
-      className={cn("inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50", variants[variant], sizes[size], className)}
-      {...props}
-    />
-  );
-});
-Button.displayName = "Button";
-
-// --- GET STARTED BUTTON (REFRESH CONTENT) ---
-function GetStartedButton({ onClick, loading }) {
-  return (
-    <Button
-      className="group relative overflow-hidden bg-indigo-600 text-white hover:bg-indigo-700 border border-indigo-500/20 shadow-lg shadow-indigo-900/20"
-      size="lg"
       onClick={onClick}
-      disabled={loading}
-    >
-      <span className="mr-8 transition-opacity duration-500 group-hover:opacity-0 font-bold tracking-wide">
-        {loading ? 'Loading...' : 'Refresh Content'}
-      </span>
-      <i className="absolute right-1 top-1 bottom-1 rounded-sm z-10 grid w-1/4 place-items-center transition-all duration-500 bg-black/20 group-hover:w-[calc(100%-0.5rem)] group-active:scale-95 text-white">
-        {loading ? <Loader2 className="animate-spin" size={16} /> : <ChevronRight size={16} strokeWidth={2} aria-hidden="true" />}
-      </i>
-    </Button>
-  );
-}
-
-// --- CARD ---
-const Card = React.forwardRef(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("rounded-xl border border-neutral-800 bg-neutral-950 text-neutral-200 shadow-sm", className)} {...props} />
-));
-Card.displayName = "Card";
-
-const CardHeader = React.forwardRef(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("flex flex-col space-y-1.5 p-6", className)} {...props} />
-));
-CardHeader.displayName = "CardHeader";
-
-const CardTitle = React.forwardRef(({ className, ...props }, ref) => (
-  <h3 ref={ref} className={cn("text-2xl font-semibold leading-none tracking-tight", className)} {...props} />
-));
-CardTitle.displayName = "CardTitle";
-
-const CardContent = React.forwardRef(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
-));
-CardContent.displayName = "CardContent";
-
-/**
- * CELESTIAL SPHERE SHADER
- */
-const vertexShader = `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const fragmentShader = `
-  precision highp float;
-  varying vec2 vUv;
-  uniform float u_time;
-  uniform vec3 u_color1;
-  uniform vec3 u_color2;
-  uniform float u_cloud_density;
-  uniform float u_glow_intensity;
-
-  float random(vec3 p) {
-    return fract(sin(dot(p, vec3(12.9898,78.233,151.7182))) * 43758.5453);
-  }
-
-  float noise(vec3 p) {
-    vec3 i = floor(p);
-    vec3 f = fract(p);
-    vec3 u = f*f*(3.0 - 2.0*f);
-
-    return mix(
-      mix(mix(random(i+vec3(0,0,0)), random(i+vec3(1,0,0)), u.x),
-          mix(random(i+vec3(0,1,0)), random(i+vec3(1,1,0)), u.x), u.y),
-      mix(mix(random(i+vec3(0,0,1)), random(i+vec3(1,0,1)), u.x),
-          mix(random(i+vec3(0,1,1)), random(i+vec3(1,1,1)), u.x), u.y),
-      u.z
-    );
-  }
-
-  float fbm(vec3 p) {
-    float v = 0.0, amp = 0.5;
-    for (int i = 0; i < 6; i++) {
-      v += amp * noise(p);
-      p *= 2.0;
-      amp *= 0.5;
-    }
-    return v;
-  }
-
-  void main() {
-    vec2 uv = vUv * 2.0 - 1.0;
-    float d = 1.0 - dot(uv, uv);
-    if (d < 0.0) discard;
-
-    // map UV onto sphere
-    vec3 pos = vec3(uv, sqrt(d));
-
-    // cloud / nebula
-    vec3 coord = pos * u_cloud_density + u_time * 0.1;
-    float c = fbm(coord);
-    vec3 nebula = mix(u_color1, u_color2, smoothstep(0.4, 0.6, c));
-
-    // Fresnel rim glow
-    float fresnel = pow(1.0 - dot(normalize(pos), vec3(0,0,1)), 2.0)
-                    * u_glow_intensity;
-    vec3 glow = fresnel * u_color2;
-
-    gl_FragColor = vec4(nebula + glow, 1.0);
-  }
-`;
-
-const ShaderCanvas = memo(({
-  color1 = 0xff5500, // Orange-Red core
-  color2 = 0xffaa00, // Gold glow
-  cloudDensity = 2.0,
-  glowIntensity = 1.5,
-  rotationSpeed = 0.2,
-}) => {
-  const mountRef = useRef(null);
-  const threeRef = useRef({});
-
-  useEffect(() => {
-    const container = mountRef.current;
-    if (!container) return;
-
-    // Scene + Camera
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000); // Aspect 1 for square
-    camera.position.z = 1.2;
-
-    // Renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x000000, 0);
-    container.appendChild(renderer.domElement);
-
-    // Uniforms
-    const uniforms = {
-      u_time: { value: 0.0 },
-      u_color1: { value: new THREE.Color(color1) },
-      u_color2: { value: new THREE.Color(color2) },
-      u_cloud_density: { value: cloudDensity },
-      u_glow_intensity: { value: glowIntensity },
-    };
-
-    // Sphere
-    const geo = new THREE.SphereGeometry(0.6, 64, 64);
-    const mat = new THREE.ShaderMaterial({
-      uniforms,
-      vertexShader,
-      fragmentShader,
-      transparent: true,
-    });
-    const sphere = new THREE.Mesh(geo, mat);
-    scene.add(sphere);
-
-    const clock = new THREE.Clock();
-    threeRef.current = { renderer, scene, camera, uniforms, sphere, clock };
-
-    // Resize
-    function onResize() {
-      if (!mountRef.current) return;
-      const W = mountRef.current.clientWidth;
-      const H = mountRef.current.clientHeight;
-      camera.aspect = W / H;
-      camera.updateProjectionMatrix();
-      renderer.setSize(W, H);
-    }
-    window.addEventListener('resize', onResize);
-    onResize();
-
-    // Loop
-    let raf;
-    const loop = () => {
-      const { clock, sphere } = threeRef.current;
-      if (!clock || !sphere) return;
-      const delta = clock.getDelta();
-      sphere.rotation.y += delta * rotationSpeed;
-      sphere.rotation.z += delta * (rotationSpeed * 0.5);
-      uniforms.u_time.value = clock.getElapsedTime();
-
-      renderer.render(scene, camera);
-      raf = requestAnimationFrame(loop);
-    };
-    loop();
-
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', onResize);
-      geo.dispose();
-      mat.dispose();
-      renderer.dispose();
-      if (container && renderer.domElement) {
-        container.removeChild(renderer.domElement);
-      }
-    };
-  }, [color1, color2, cloudDensity, glowIntensity, rotationSpeed]);
-
-  return (
-    <div
-      ref={mountRef}
-      className="w-full h-full rounded-full"
-      style={{ overflow: 'hidden' }}
-    />
-  );
-});
-
-
-/**
- * RADIAL ORBITAL TIMELINE
- */
-function RadialOrbitalTimeline({ timelineData, onSelectVibe }) {
-  const [expandedItems, setExpandedItems] = useState({});
-  const [viewMode, setViewMode] = useState("orbital");
-  const [rotationAngle, setRotationAngle] = useState(0);
-  const [autoRotate, setAutoRotate] = useState(true);
-  const [pulseEffect, setPulseEffect] = useState({});
-  const [centerOffset, setCenterOffset] = useState({ x: 0, y: 0 });
-  const [activeNodeId, setActiveNodeId] = useState(null);
-  const containerRef = useRef(null);
-  const orbitRef = useRef(null);
-  const nodeRefs = useRef({});
-
-  const handleContainerClick = (e) => {
-    if (e.target === containerRef.current || e.target === orbitRef.current) {
-      setExpandedItems({});
-      setActiveNodeId(null);
-      setPulseEffect({});
-      setAutoRotate(true);
-    }
-  };
-
-  const toggleItem = (id) => {
-    setExpandedItems((prev) => {
-      const newState = { ...prev };
-      Object.keys(newState).forEach((key) => {
-        if (parseInt(key) !== id) {
-          newState[parseInt(key)] = false;
-        }
-      });
-
-      newState[id] = !prev[id];
-
-      if (!prev[id]) {
-        setActiveNodeId(id);
-        setAutoRotate(false);
-
-        const relatedItems = getRelatedItems(id);
-        const newPulseEffect = {};
-        relatedItems.forEach((relId) => {
-          newPulseEffect[relId] = true;
-        });
-        setPulseEffect(newPulseEffect);
-
-        centerViewOnNode(id);
-      } else {
-        setActiveNodeId(null);
-        setAutoRotate(true);
-        setPulseEffect({});
-      }
-
-      return newState;
-    });
-  };
-
-  useEffect(() => {
-    let rotationTimer;
-
-    if (autoRotate && viewMode === "orbital") {
-      rotationTimer = setInterval(() => {
-        setRotationAngle((prev) => {
-          const newAngle = (prev + 0.2) % 360;
-          return Number(newAngle.toFixed(3));
-        });
-      }, 50);
-    }
-
-    return () => {
-      if (rotationTimer) {
-        clearInterval(rotationTimer);
-      }
-    };
-  }, [autoRotate, viewMode]);
-
-  const centerViewOnNode = (nodeId) => {
-    if (viewMode !== "orbital" || !nodeRefs.current[nodeId]) return;
-
-    const nodeIndex = timelineData.findIndex((item) => item.id === nodeId);
-    const totalNodes = timelineData.length;
-    const targetAngle = (nodeIndex / totalNodes) * 360;
-    setRotationAngle(270 - targetAngle);
-  };
-
-  const calculateNodePosition = (index, total) => {
-    const angle = ((index / total) * 360 + rotationAngle) % 360;
-    const radius = 220;
-    const radian = (angle * Math.PI) / 180;
-
-    const x = radius * Math.cos(radian) + centerOffset.x;
-    const y = radius * Math.sin(radian) + centerOffset.y;
-
-    const zIndex = Math.round(100 + 50 * Math.cos(radian));
-    const opacity = Math.max(
-      0.4,
-      Math.min(1, 0.4 + 0.6 * ((1 + Math.sin(radian)) / 2))
-    );
-
-    return { x, y, angle, zIndex, opacity };
-  };
-
-  const getRelatedItems = (itemId) => {
-    const currentItem = timelineData.find((item) => item.id === itemId);
-    return currentItem ? currentItem.relatedIds : [];
-  };
-
-  const isRelatedToActive = (itemId) => {
-    if (!activeNodeId) return false;
-    const relatedItems = getRelatedItems(activeNodeId);
-    return relatedItems.includes(itemId);
-  };
-
-  return (
-    <div
-      className="w-full h-full min-h-[600px] flex flex-col items-center justify-center bg-neutral-950 overflow-hidden relative rounded-3xl border border-white/5"
-      ref={containerRef}
-      onClick={handleContainerClick}
-    >
-       {/* Instructions Overlay */}
-       {!activeNodeId && (
-         <div className="absolute top-8 left-0 right-0 text-center pointer-events-none z-20">
-            <p className="text-neutral-500 text-sm uppercase tracking-widest">Click an orb to explore</p>
-         </div>
-       )}
-
-      <div className="relative w-full max-w-4xl h-full flex items-center justify-center perspective-1000">
-        <div
-          className="absolute w-full h-full flex items-center justify-center preserve-3d"
-          ref={orbitRef}
-          style={{
-            transform: `translate(${centerOffset.x}px, ${centerOffset.y}px)`,
-          }}
-        >
-          {/* Core / Center Shader */}
-          <div className="absolute w-48 h-48 rounded-full flex items-center justify-center z-0 pointer-events-none">
-             <ShaderCanvas
-               color1="#4f46e5" // Indigo
-               color2="#c026d3" // Fuchsia
-               rotationSpeed={0.4}
-               cloudDensity={3.5}
-             />
-          </div>
-
-          {/* Core Rings */}
-          <div className="absolute w-32 h-32 rounded-full border border-indigo-500/30 animate-ping opacity-20 pointer-events-none"></div>
-
-          {/* Orbital Rings */}
-          <div className="absolute w-[440px] h-[440px] rounded-full border border-white/5 border-dashed animate-spin-slow"></div>
-          <div className="absolute w-[600px] h-[600px] rounded-full border border-white/5 opacity-30"></div>
-
-          {timelineData.map((item, index) => {
-            const position = calculateNodePosition(index, timelineData.length);
-            const isExpanded = expandedItems[item.id];
-            const isRelated = isRelatedToActive(item.id);
-            const isPulsing = pulseEffect[item.id];
-            const Icon = item.icon;
-
-            const nodeStyle = {
-              transform: `translate(${position.x}px, ${position.y}px)`,
-              zIndex: isExpanded ? 200 : position.zIndex,
-              opacity: isExpanded ? 1 : position.opacity,
-            };
-
-            return (
-              <div
-                key={item.id}
-                ref={(el) => (nodeRefs.current[item.id] = el)}
-                className="absolute transition-all duration-700 cursor-pointer"
-                style={nodeStyle}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleItem(item.id);
-                }}
-              >
-                {/* Energy Field */}
-                <div
-                  className={`absolute rounded-full -inset-2 ${
-                    isPulsing ? "animate-pulse duration-1000 bg-indigo-500/20" : ""
-                  }`}
-                  style={{
-                    width: `${item.energy * 0.6 + 50}px`,
-                    height: `${item.energy * 0.6 + 50}px`,
-                    left: `-${(item.energy * 0.6 + 50 - 40) / 2}px`,
-                    top: `-${(item.energy * 0.6 + 50 - 40) / 2}px`,
-                  }}
-                ></div>
-
-                {/* Node Body */}
-                <div
-                  className={`
-                  w-12 h-12 rounded-full flex items-center justify-center relative
-                  ${
-                    isExpanded
-                      ? "bg-white text-black shadow-[0_0_30px_rgba(255,255,255,0.5)]"
-                      : isRelated
-                      ? "bg-indigo-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.4)]"
-                      : "bg-neutral-900 text-white border border-white/20"
-                  }
-                  transition-all duration-300 transform
-                  ${isExpanded ? "scale-125" : "hover:scale-110"}
-                `}
-                >
-                  <Icon size={isExpanded ? 20 : 18} />
-
-                  {!isExpanded && (
-                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                         <span className={`text-[10px] font-bold uppercase tracking-widest ${isRelated ? "text-indigo-400" : "text-neutral-500"}`}>
-                           {item.title}
-                         </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* EXPANDED CARD */}
-                {isExpanded && (
-                  <Card className="absolute top-16 left-1/2 -translate-x-1/2 w-72 bg-black/80 backdrop-blur-xl border-white/10 shadow-2xl overflow-visible z-50 animate-in fade-in zoom-in-95 duration-300">
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-px h-3 bg-white/50"></div>
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between items-center mb-2">
-                        <Badge variant="secondary" className="bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 border-indigo-500/20">
-                          {item.category}
-                        </Badge>
-                        <span className="text-xs font-mono text-white/50">
-                          {item.energy}% Energy
-                        </span>
-                      </div>
-                      <CardTitle className="text-lg text-white">
-                        {item.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-sm text-neutral-400 space-y-4">
-                      <p>{item.content}</p>
-
-                      <div className="w-full h-1 bg-neutral-800 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
-                          style={{ width: `${item.energy}%` }}
-                        ></div>
-                      </div>
-
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSelectVibe(item.originalData);
-                        }}
-                        className="w-full gap-2 mt-2 bg-white text-black hover:bg-neutral-200"
-                      >
-                        Explore Movies <ArrowRight size={14} />
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * SIDEBAR COMPONENTS
- */
-const SidebarContext = createContext(undefined);
-const useSidebar = () => {
-  const context = useContext(SidebarContext);
-  if (!context) throw new Error("useSidebar must be used within a SidebarProvider");
-  return context;
-};
-const SidebarProvider = ({ children, open: openProp, setOpen: setOpenProp, animate = true }) => {
-  const [openState, setOpenState] = useState(false);
-  const open = openProp !== undefined ? openProp : openState;
-  const setOpen = setOpenProp !== undefined ? setOpenProp : setOpenState;
-  return (
-    <SidebarContext.Provider value={{ open, setOpen, animate }}>
-      {children}
-    </SidebarContext.Provider>
-  );
-};
-const Sidebar = ({ children, open, setOpen, animate }) => (
-  <SidebarProvider open={open} setOpen={setOpen} animate={animate}>
-    {children}
-  </SidebarProvider>
-);
-const SidebarBody = (props) => (
-  <>
-    <DesktopSidebar {...props} />
-    <MobileSidebar {...props} />
-  </>
-);
-const DesktopSidebar = ({ className, children, ...props }) => {
-  const { open, setOpen, animate } = useSidebar();
-  return (
-    <motion.div
-      className={cn("h-full px-4 py-4 hidden md:flex md:flex-col bg-neutral-900 w-[300px] flex-shrink-0 border-r border-neutral-800", className)}
-      animate={{ width: animate ? (open ? "300px" : "80px") : "300px" }}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      {...props}
+      disabled={disabled}
+      className={cn(
+        'px-6 py-3 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 disabled:opacity-50',
+        variants[variant],
+        className
+      )}
     >
       {children}
-    </motion.div>
-  );
-};
-const MobileSidebar = ({ className, children, ...props }) => {
-  const { open, setOpen } = useSidebar();
-  return (
-    <div className={cn("h-16 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-neutral-900 w-full border-b border-neutral-800", className)} {...props}>
-      <div className="flex justify-between items-center z-20 w-full">
-        <span className="font-bold text-xl text-white">CineVibe</span>
-        <Menu className="text-neutral-200 cursor-pointer" onClick={() => setOpen(!open)} />
-      </div>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ x: "-100%", opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: "-100%", opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="fixed h-full w-full inset-0 bg-neutral-900 p-10 z-[100] flex flex-col justify-between"
-          >
-            <div className="absolute right-10 top-10 z-50 text-neutral-200 cursor-pointer" onClick={() => setOpen(!open)}>
-              <X />
-            </div>
-            {children}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
-const SidebarLink = ({ link, className, ...props }) => {
-  const { open, animate } = useSidebar();
-  return (
-    <button 
-      onClick={link.onClick} 
-      className={cn("flex items-center justify-start gap-2 group/sidebar py-3 px-2 hover:bg-neutral-800 rounded-lg transition-colors w-full", className)} 
-      {...props}
-      aria-label={link.label}
-    >
-      {link.icon}
-      <motion.span
-        animate={{ display: animate ? (open ? "inline-block" : "none") : "inline-block", opacity: animate ? (open ? 1 : 0) : 1 }}
-        className="text-neutral-200 text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0 text-left"
-      >
-        {link.label}
-      </motion.span>
     </button>
   );
 };
-const Logo = () => (
-  <div className="font-normal flex space-x-2 items-center text-sm text-black py-1 relative z-20">
-    <div className="h-6 w-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
-      <Film className="text-white w-3 h-3" />
-    </div>
-    <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-bold text-xl text-white whitespace-pre">
-      CineVibe
-    </motion.span>
-  </div>
-);
-const LogoIcon = () => (
-  <div className="font-normal flex space-x-2 items-center text-sm text-black py-1 relative z-20">
-    <div className="h-6 w-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
-      <Film className="text-white w-3 h-3" />
-    </div>
-  </div>
-);
-const GlowButton = ({ children, onClick, className = "", disabled = false }) => (
-  <button
-    onClick={onClick}
-    disabled={disabled}
-    className={`relative group px-8 py-3 rounded-full bg-neutral-900 text-white font-medium tracking-wide overflow-hidden transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:pointer-events-none ${className}`}
-  >
-    <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
-    <div className="absolute inset-0 w-full h-full border border-white/10 rounded-full" />
-    <span className="relative flex items-center justify-center gap-2">{children}</span>
-  </button>
-);
-const NeonInput = ({ value, onChange, placeholder, type = "text" }) => (
-  <div className="relative group w-full max-w-md">
-    <div className="absolute -inset-1 bg-gradient-to-r from-pink-600 to-purple-600 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200" />
-    <input 
-      type={type} 
-      value={value} 
-      onChange={onChange} 
-      placeholder={placeholder} 
-      className="relative w-full bg-neutral-900 text-white border border-white/10 rounded-lg px-4 py-4 focus:outline-none focus:ring-2 focus:ring-purple-500/50 placeholder-neutral-500 transition-all" 
-      aria-label={placeholder}
-    />
-  </div>
-);
 
-// --- CONFIG: GENRE MAPPINGS ---
-const VIBES = [
-  { id: 'hollywood', label: 'Hollywood', icon: Film, params: { with_original_language: 'en' }, desc: "Blockbuster hits and star-studded casts." },
-  { id: 'bollywood', label: 'Bollywood', icon: Globe2, params: { with_original_language: 'hi', 'vote_count.gte': '50' }, desc: "Music, masala, and dramatic storytelling." },
-  { id: 'horror', label: 'Horror', icon: Ghost, params: { with_genres: '27' }, desc: "Spine-chilling tales and jump scares." },
-  { id: 'slasher', label: 'Slasher', icon: Skull, params: { with_genres: '53,27' }, desc: "Edge of your seat thriller and gore." },
-  { id: 'romantic', label: 'Romance', icon: Heart, params: { with_genres: '10749' }, desc: "Love stories that melt your heart." },
-  { id: 'heartbreak', label: 'Heartbreak', icon: HeartCrack, params: { with_genres: '18,10749' }, desc: "Sad movies for a good cry." },
-  { id: 'action', label: 'Action', icon: Clapperboard, params: { with_genres: '28' }, desc: "High octane stunts and explosions." },
-  { id: 'scifi', label: 'Sci-Fi', icon: Zap, params: { with_genres: '878' }, desc: "Futuristic adventures and technological wonders." },
-  { id: 'comedy', label: 'Comedy', icon: Star, params: { with_genres: '35' }, desc: "Laughter and light-hearted entertainment." },
-  { id: 'drama', label: 'Drama', icon: Calendar, params: { with_genres: '18' }, desc: "Emotionally engaging storytelling." },
-  { id: 'thriller', label: 'Thriller', icon: Clock, params: { with_genres: '53' }, desc: "Suspenseful and gripping narratives." },
-  { id: 'documentary', label: 'Documentary', icon: FileText, params: { with_genres: '99' }, desc: "Real-world stories and facts." },
-  { id: 'tv_movie', label: 'TV Movie', icon: Tv, params: { with_genres: '10770' }, desc: "Movies made for television." },
-  { id: 'adventure', label: 'Adventure', icon: LinkIcon, params: { with_genres: '12' }, desc: "Exciting journeys and epic quests." },
-  { id: 'animation', label: 'Animation', icon: Star, params: { with_genres: '16' }, desc: "Animated features for all ages." }
-];
-
-// --- MAIN APP ---
-export default function CineVibe() {
-  const [apiKey, setApiKey] = useState(() => {
-    // Try to get API key from localStorage first, then from environment
-    return localStorage.getItem('tmdb_api_key') || '';
-  });
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // App State
-  const [view, setView] = useState('selection'); // selection, results
-  const [selectedVibe, setSelectedVibe] = useState(null);
-  const [movies, setMovies] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [selectedMovie, setSelectedMovie] = useState(null);
-  const [reviews, setReviews] = useState([]);
-  const [filteredReviews, setFilteredReviews] = useState([]);
-  const [reviewFilter, setReviewFilter] = useState('all'); // 'all', 'good', 'neutral', 'bad'
-  const [reviewsLoading, setReviewsLoading] = useState(false);
-
-  // Reviews Pagination State
-  const [reviewsPage, setReviewsPage] = useState(1);
-  const [reviewsTotalPages, setReviewsTotalPages] = useState(1);
-
-  // Movie List Pagination State
-  const [pageOffset, setPageOffset] = useState(0);
-
-  // Transform VIBES to Timeline Data
-  const vibeTimelineData = VIBES.map((v, index) => ({
-    id: index + 1,
-    title: v.label,
-    date: "Discover",
-    content: v.desc,
-    category: "Genre",
-    icon: v.icon,
-    relatedIds: [(index + 1) % VIBES.length + 1, (index + 3) % VIBES.length + 1], // Create fake connections
-    status: "in-progress",
-    energy: Math.floor(Math.random() * 40) + 60, // Random energy 60-100
-    originalData: v
-  }));
-
-  // --- HANDLERS ---
-  const handleKeySubmit = async () => {
-    if (!apiKey) return;
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch(`https://api.themoviedb.org/3/configuration?api_key=${apiKey}`);
-      if (!res.ok) throw new Error('Invalid API Key');
-      setIsAuthenticated(true);
-      // Save the API key to localStorage for convenience (not ideal for production security)
-      localStorage.setItem('tmdb_api_key', apiKey);
-    } catch (err) {
-      setError('Invalid API Key. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+/**
+ * ANIMATED BACKGROUND - Premium Mesh Gradient
+ */
+const AnimatedBackground = ({ gradient = 'from-violet-950 via-purple-950 to-indigo-950', intensity = 'normal' }) => {
+  const intensityConfig = {
+    subtle: { orbOpacity: 0.1, gridOpacity: 0.02 },
+    normal: { orbOpacity: 0.2, gridOpacity: 0.03 },
+    high: { orbOpacity: 0.3, gridOpacity: 0.05 }
   };
-
-  // Fetch 100 Movies (5 Pages x 20)
-  const fetchMovies = async (vibe, offset = 0) => {
-    if (!apiKey) {
-      setError('API Key is required to fetch movies.');
-      setView('selection');
-      return;
-    }
-    
-    setLoading(true);
-    setSelectedVibe(vibe);
-    setMovies([]);
-    setError('');
-    setPageOffset(offset);
-
-    try {
-      // Offset allows us to fetch pages 1-5, then 6-10, etc.
-      const startPage = (offset * 5) + 1;
-      const pages = [startPage, startPage + 1, startPage + 2, startPage + 3, startPage + 4];
-
-      const requests = pages.map(page => {
-        let queryParams = new URLSearchParams({
-          api_key: apiKey,
-          page: page.toString(),
-          include_adult: 'false',
-          sort_by: 'vote_average.desc',
-          'vote_count.gte': '300', // Default
-          ...vibe.params // Override (e.g., Bollywood uses 50)
-        });
-        return fetch(`https://api.themoviedb.org/3/discover/movie?${queryParams.toString()}`);
-      });
-
-      const responses = await Promise.all(requests);
-      
-      // Check if any response is not ok
-      const allValid = responses.every(res => res.ok);
-      if (!allValid) {
-        throw new Error('Failed to fetch movies. Please try again.');
-      }
-      
-      const data = await Promise.all(responses.map(res => res.json()));
-      let allMovies = data.flatMap(d => d.results || []);
-      allMovies = Array.from(new Map(allMovies.map(m => [m.id, m])).values()); // Dedupe
-      allMovies.sort((a, b) => b.vote_average - a.vote_average); // Sort Desc
-      setMovies(allMovies.slice(0, 100));
-      setView('results');
-    } catch (err) {
-      console.error(err);
-      setError('Failed to fetch movies. Check your connection.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRefresh = () => {
-    if (selectedVibe) {
-       fetchMovies(selectedVibe, pageOffset + 1); // Fetch next 5 pages
-    }
-  };
-
-  // --- REVIEW LOGIC ---
-  const fetchSingleReviewPage = async (movieId, page = 1) => {
-    if (!apiKey) {
-      throw new Error('API Key is required');
-    }
-    const res = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/reviews?api_key=${apiKey}&page=${page}`);
-    return await res.json();
-  };
-
-  const openMovieDetails = async (movie) => {
-    setSelectedMovie(movie);
-    setReviewsLoading(true);
-    setReviewFilter('all');
-    setReviews([]);
-    setFilteredReviews([]);
-    setReviewsPage(1);
-
-    try {
-        // Fetch first 3 pages in parallel to get a diverse set of reviews immediately
-        const p1 = fetchSingleReviewPage(movie.id, 1);
-        const p2 = fetchSingleReviewPage(movie.id, 2);
-        const p3 = fetchSingleReviewPage(movie.id, 3);
-
-        const results = await Promise.all([p1, p2, p3]);
-
-        let combinedReviews = [];
-        let maxPage = 1;
-
-        results.forEach(data => {
-            if (data.results) {
-                combinedReviews = [...combinedReviews, ...data.results];
-            }
-            if (data.total_pages > maxPage) maxPage = data.total_pages;
-        });
-
-        // Remove duplicates
-        combinedReviews = Array.from(new Map(combinedReviews.map(item => [item.id, item])).values());
-
-        setReviews(combinedReviews);
-        setReviewsTotalPages(maxPage);
-        setReviewsPage(3); // We fetched up to 3
-
-    } catch (e) {
-      console.error("Failed to fetch reviews", e);
-    } finally {
-      setReviewsLoading(false);
-    }
-  };
-
-  const loadMoreReviews = async () => {
-    if (reviewsPage >= reviewsTotalPages) return;
-    const nextPage = reviewsPage + 1;
-    setReviewsLoading(true);
-    try {
-        const data = await fetchSingleReviewPage(selectedMovie.id, nextPage);
-        setReviews(prev => {
-            const newReviews = [...prev, ...data.results];
-            return Array.from(new Map(newReviews.map(item => [item.id, item])).values());
-        });
-        setReviewsPage(nextPage);
-        setReviewsTotalPages(data.total_pages);
-    } catch(e) {
-         console.error("Failed to fetch more reviews");
-    } finally {
-        setReviewsLoading(false);
-    }
-  }
-
-  // Smart Filtering Logic
-  useEffect(() => {
-    if (!reviews) return;
-
-    let filtered = [...reviews];
-    if (reviewFilter === 'good') {
-      filtered = reviews.filter(r => r.author_details?.rating >= 7);
-    } else if (reviewFilter === 'neutral') {
-      filtered = reviews.filter(r => r.author_details?.rating >= 4 && r.author_details?.rating < 7);
-    } else if (reviewFilter === 'bad') {
-      filtered = reviews.filter(r => (r.author_details?.rating || 0) < 4);
-    }
-
-    setFilteredReviews(filtered);
-
-    // AUTO-SCRAPE: If filter yields few results (<3) and we have more pages, fetch automatically
-    if (reviewFilter !== 'all' && filtered.length < 3 && reviewsPage < reviewsTotalPages && !reviewsLoading) {
-       console.log("Auto-fetching more reviews to find matches for:", reviewFilter);
-       loadMoreReviews();
-    }
-  }, [reviewFilter, reviews, reviewsPage, reviewsTotalPages]);
-
-
-  const closeModal = () => {
-    setSelectedMovie(null);
-    setReviews([]);
-  };
-
-  // Check for API key on component mount
-  useEffect(() => {
-    const savedApiKey = localStorage.getItem('tmdb_api_key');
-    if (savedApiKey) {
-      setIsAuthenticated(true);
-    }
-  }, []);
-
-  // Modified Sidebar Links - Removed Logout
-  const navLinks = [
-    { label: "Discover Vibes", href: "#", onClick: () => setView('selection'), icon: <LayoutDashboard className="text-neutral-200 h-5 w-5 flex-shrink-0" /> },
-    { label: "Top Rated", href: "#", onClick: () => fetchMovies({ id: 'top_rated', label: 'All Time Best', params: { sort_by: 'vote_average.desc', 'vote_count.gte': '1000' } }), icon: <Flame className="text-neutral-200 h-5 w-5 flex-shrink-0" /> },
-    { label: "Trending", href: "#", onClick: () => fetchMovies({ id: 'trending', label: 'Trending Now', params: { sort_by: 'popularity.desc' } }), icon: <TrendingUp className="text-neutral-200 h-5 w-5 flex-shrink-0" /> },
-  ];
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-neutral-950 text-white relative overflow-hidden">
-         <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none"></div>
-         <div className="absolute -top-[50%] -left-[50%] w-[200%] h-[200%] animate-slow-spin opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-violet-900/40 via-neutral-950 to-neutral-950 blur-3xl pointer-events-none" />
-         <div className="z-10 space-y-8 text-center p-4">
-            <div className="space-y-4">
-               <h1 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-neutral-500">CineVibe</h1>
-               <p className="text-lg text-neutral-400 max-w-lg mx-auto">Enter your TMDB API Key to unlock a premium, curated movie discovery experience.</p>
-            </div>
-            <div className="w-full max-w-md mx-auto space-y-4">
-              <NeonInput value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="Enter TMDB API Key" type="password" />
-              {error && <p className="text-red-400 text-sm">{error}</p>}
-              <GlowButton onClick={handleKeySubmit} disabled={loading || !apiKey} className="w-full">{loading ? <Loader2 className="animate-spin" /> : "Enter Cinematic Universe"}</GlowButton>
-              <p className="text-xs text-neutral-600"><a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noreferrer noopener" className="underline hover:text-white">Get API Key</a></p>
-            </div>
-         </div>
-         <style>{`@keyframes slow-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } .animate-slow-spin { animation: slow-spin 30s linear infinite; }`}</style>
-      </div>
-    );
-  }
+  const config = intensityConfig[intensity] || intensityConfig.normal;
 
   return (
-    <div className="flex h-screen bg-neutral-950 overflow-hidden font-sans text-neutral-200 selection:bg-indigo-500/30">
-       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen}>
-        <SidebarBody className="justify-between gap-10">
-          <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-            {sidebarOpen ? <Logo /> : <LogoIcon />}
-            <div className="mt-8 flex flex-col gap-2">
-              {navLinks.map((link, idx) => (
-                <SidebarLink key={idx} link={link} />
-              ))}
+    <div className="fixed inset-0 z-0 overflow-hidden">
+      <div className="absolute inset-0 bg-[#030305]" />
+      <div
+        className={`absolute inset-0 bg-gradient-to-br ${gradient}`}
+        style={{
+          backgroundSize: '400% 400%',
+          animation: 'mesh-gradient 20s ease infinite'
+        }}
+      />
+
+      <motion.div
+        className="absolute top-1/4 left-1/5 w-[500px] h-[500px] rounded-full"
+        style={{
+          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.35) 0%, transparent 70%)',
+          filter: 'blur(80px)',
+          opacity: config.orbOpacity
+        }}
+        animate={{ x: [0, 30, -20, 0], y: [0, -40, 20, 0], scale: [1, 1.1, 0.95, 1] }}
+        transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+      />
+
+      <motion.div
+        className="absolute top-1/2 right-1/4 w-[400px] h-[400px] rounded-full"
+        style={{
+          background: 'radial-gradient(circle, rgba(236, 72, 153, 0.3) 0%, transparent 70%)',
+          filter: 'blur(70px)',
+          opacity: config.orbOpacity
+        }}
+        animate={{ x: [0, -40, 30, 0], y: [0, 30, -30, 0], scale: [1, 0.9, 1.15, 1] }}
+        transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+      />
+
+      <motion.div
+        className="absolute bottom-1/4 left-1/3 w-[350px] h-[350px] rounded-full"
+        style={{
+          background: 'radial-gradient(circle, rgba(6, 182, 212, 0.25) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+          opacity: config.orbOpacity
+        }}
+        animate={{ x: [0, 25, -35, 0], y: [0, -25, 35, 0], scale: [1, 1.2, 0.85, 1] }}
+        transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut', delay: 5 }}
+      />
+
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.7) 100%)'
+        }}
+      />
+    </div>
+  );
+};
+
+/**
+ * LANDING BANNER - Premium Entrance
+ */
+const LandingBanner = ({ onEnter }) => {
+  const categories = Object.values(CONTENT_CATEGORIES);
+
+  return (
+    <div className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden">
+      <AnimatedBackground gradient="from-neutral-950 via-violet-950/30 to-neutral-950" intensity="high" />
+
+      <motion.div
+        className="z-10 flex flex-col items-center justify-center text-center px-6 max-w-4xl"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="relative mb-10">
+          <motion.div
+            className="absolute inset-0 -inset-x-32 -inset-y-16"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 blur-[100px] opacity-40 animate-pulse" />
+          </motion.div>
+
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0, y: 30 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <h1 className="relative text-7xl md:text-9xl font-black bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-violet-300 tracking-tight drop-shadow-2xl">
+              Zylmia
+            </h1>
+          </motion.div>
+
+          <motion.p
+            className="text-xl md:text-2xl text-neutral-400 mt-6 font-light tracking-widest uppercase"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+          >
+            Your <span className="text-violet-400">Ultimate</span> Streaming Universe
+          </motion.p>
+        </div>
+
+        <motion.div
+          className="flex flex-wrap justify-center gap-3 mb-14"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.7 }}
+        >
+          {categories.map((cat, idx) => {
+            const Icon = cat.icon;
+            return (
+              <motion.span
+                key={cat.id}
+                className="px-5 py-2.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-sm font-medium flex items-center gap-2 text-white/70"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, delay: 0.8 + idx * 0.1 }}
+              >
+                <Icon size={14} />
+                {cat.label}
+              </motion.span>
+            );
+          })}
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 1.2 }}
+          className="relative"
+        >
+          <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 rounded-full blur-lg opacity-50 animate-pulse" />
+          <button
+            onClick={onEnter}
+            className="relative group px-14 py-5 rounded-full overflow-hidden"
+          >
+            <div
+              className="absolute inset-0 bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 rounded-full"
+              style={{ backgroundSize: '200% 200%', animation: 'mesh-gradient 3s ease infinite' }}
+            />
+            <div className="absolute inset-[2px] bg-neutral-950/80 rounded-full backdrop-blur-sm group-hover:bg-neutral-950/60 transition-colors" />
+            <span className="relative z-10 flex items-center gap-3 text-white font-bold text-lg tracking-wide">
+              Enter the Universe
+              <motion.span animate={{ x: [0, 5, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
+                <ArrowRight className="w-5 h-5" />
+              </motion.span>
+            </span>
+          </button>
+        </motion.div>
+
+        <motion.p
+          className="text-neutral-600 text-sm mt-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 1.5 }}
+        >
+          Stream movies, shows, and more — all in one place
+        </motion.p>
+      </motion.div>
+
+      <motion.div
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 2 }}
+      >
+        <motion.div
+          className="w-6 h-10 rounded-full border-2 border-white/20 flex justify-center pt-2"
+          animate={{ borderColor: ['rgba(255,255,255,0.2)', 'rgba(139,92,246,0.4)', 'rgba(255,255,255,0.2)'] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <motion.div
+            className="w-1.5 h-3 bg-violet-400 rounded-full"
+            animate={{ y: [0, 12, 0], opacity: [1, 0.5, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+        </motion.div>
+      </motion.div>
+    </div>
+  );
+};
+
+/**
+ * NAVIGATION SIDEBAR - Premium Glassmorphism
+ */
+const NavigationSidebar = ({ isOpen, onToggle }) => {
+  const location = useLocation();
+
+  const navItems = [
+    { path: '/home', label: 'Home', icon: Home, accent: 'violet' },
+    { path: '/movies', label: 'Movies', icon: Film, accent: 'violet' },
+    { path: '/tvshows', label: 'TV Shows', icon: Tv, accent: 'cyan' },
+    { path: '/anime', label: 'Anime', icon: Sparkles, accent: 'pink' },
+    { path: '/kdrama', label: 'K-Drama', icon: Heart, accent: 'emerald' },
+    { path: '/jdrama', label: 'J-Drama', icon: Globe2, accent: 'amber' },
+  ];
+
+  const accentColors = {
+    violet: { bg: 'from-violet-500/20 to-purple-500/20', border: 'border-violet-500/30', text: 'text-violet-400', glow: 'rgba(139, 92, 246, 0.3)' },
+    cyan: { bg: 'from-cyan-500/20 to-blue-500/20', border: 'border-cyan-500/30', text: 'text-cyan-400', glow: 'rgba(6, 182, 212, 0.3)' },
+    pink: { bg: 'from-pink-500/20 to-rose-500/20', border: 'border-pink-500/30', text: 'text-pink-400', glow: 'rgba(236, 72, 153, 0.3)' },
+    emerald: { bg: 'from-emerald-500/20 to-teal-500/20', border: 'border-emerald-500/30', text: 'text-emerald-400', glow: 'rgba(16, 185, 129, 0.3)' },
+    amber: { bg: 'from-amber-500/20 to-orange-500/20', border: 'border-amber-500/30', text: 'text-amber-400', glow: 'rgba(245, 158, 11, 0.3)' },
+  };
+
+  return (
+    <motion.aside
+      className="fixed left-0 top-0 h-full z-50 flex flex-col"
+      animate={{ width: isOpen ? 280 : 80 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      onMouseEnter={() => onToggle(true)}
+      onMouseLeave={() => onToggle(false)}
+    >
+      <div className="absolute inset-0 bg-[#0a0a12]/90 backdrop-blur-2xl" />
+      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent" />
+      <div className="absolute right-0 top-0 bottom-0 w-[1px] bg-gradient-to-b from-white/10 via-white/5 to-white/10" />
+      <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-violet-600/5 to-transparent pointer-events-none" />
+
+      <div className="relative z-10 flex flex-col h-full">
+        <div className="p-5 border-b border-white/5">
+          <Link to="/home" className="flex items-center gap-3 group">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-violet-600 to-purple-600 rounded-xl blur-md opacity-50 group-hover:opacity-70 transition-opacity" />
+              <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center shadow-lg">
+                <Sparkles className="text-white w-5 h-5" />
+              </div>
+            </div>
+            <motion.div
+              animate={{ opacity: isOpen ? 1 : 0, x: isOpen ? 0 : -10 }}
+              transition={{ duration: 0.2, delay: isOpen ? 0.1 : 0 }}
+              className="overflow-hidden"
+            >
+              <span className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-white to-violet-200">
+                Zylmia
+              </span>
+              <p className="text-[10px] text-neutral-500 -mt-0.5">Streaming Universe</p>
+            </motion.div>
+          </Link>
+        </div>
+
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            const Icon = item.icon;
+            const colors = accentColors[item.accent];
+
+            return (
+              <Link key={item.path} to={item.path} className="block relative">
+                <motion.div
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 relative overflow-hidden",
+                    isActive
+                      ? `bg-gradient-to-r ${colors.bg} ${colors.border} border`
+                      : "text-neutral-400 hover:text-white hover:bg-white/5 border border-transparent"
+                  )}
+                  whileHover={{ x: 4 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeIndicator"
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full"
+                      style={{ background: `linear-gradient(to bottom, ${colors.glow}, transparent)` }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                  <Icon className={cn("w-5 h-5 flex-shrink-0 transition-colors", isActive ? colors.text : "text-neutral-500")} />
+                  <motion.span
+                    animate={{ opacity: isOpen ? 1 : 0, x: isOpen ? 0 : -10, width: isOpen ? 'auto' : 0 }}
+                    transition={{ duration: 0.2 }}
+                    className={cn("font-medium whitespace-nowrap overflow-hidden", isActive ? "text-white" : "")}
+                  >
+                    {item.label}
+                  </motion.span>
+                </motion.div>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Credits Section */}
+        <div className="p-3 border-t border-white/5">
+          <div className={cn("flex items-center gap-2 px-4 py-3 transition-all", isOpen ? "justify-start" : "justify-center")}>
+            <Heart className="w-4 h-4 text-pink-500 flex-shrink-0 animate-pulse" fill="currentColor" />
+            <motion.div
+              animate={{ opacity: isOpen ? 1 : 0, x: isOpen ? 0 : -10, width: isOpen ? 'auto' : 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden whitespace-nowrap"
+            >
+              <p className="text-[11px] text-neutral-500">Created by</p>
+              <p className="text-xs font-medium bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-pink-400">
+                Suman Patgiri
+              </p>
+            </motion.div>
+          </div>
+          <motion.div animate={{ opacity: isOpen ? 1 : 0 }} transition={{ duration: 0.2 }} className="px-4 pb-2">
+            <span className="text-[9px] text-neutral-600">v1.0.0 • Zylmia</span>
+          </motion.div>
+        </div>
+      </div>
+    </motion.aside>
+  );
+};
+
+/**
+ * CONTENT CARD - 3D Premium Card with Click Handler
+ */
+const ContentCard = ({ item, rank, onDetails }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0.5, y: 0.5 });
+  const cardRef = useRef(null);
+
+  const handleMouseMove = useCallback((e) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    setMousePosition({ x, y });
+  }, []);
+
+  const rotateX = isHovered ? (mousePosition.y - 0.5) * -15 : 0;
+  const rotateY = isHovered ? (mousePosition.x - 0.5) * 15 : 0;
+
+  return (
+    <motion.div
+      ref={cardRef}
+      className="group relative aspect-[2/3] cursor-pointer"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => { setIsHovered(false); setMousePosition({ x: 0.5, y: 0.5 }); }}
+      onMouseMove={handleMouseMove}
+      onClick={() => onDetails(item)}
+      style={{ perspective: '1000px' }}
+    >
+      <motion.div
+        className="relative w-full h-full rounded-xl overflow-hidden"
+        animate={{ rotateX, rotateY, scale: isHovered ? 1.02 : 1, y: isHovered ? -8 : 0 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        style={{ transformStyle: 'preserve-3d' }}
+      >
+        <div
+          className={cn("absolute -inset-[1px] rounded-xl opacity-0 transition-opacity duration-300", isHovered && "opacity-100")}
+          style={{
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.6) 0%, rgba(236, 72, 153, 0.4) 50%, rgba(6, 182, 212, 0.6) 100%)',
+            backgroundSize: '200% 200%',
+            animation: isHovered ? 'mesh-gradient 3s ease infinite' : 'none'
+          }}
+        />
+
+        <div className="absolute inset-[1px] rounded-xl overflow-hidden bg-neutral-900">
+          {isHovered && (
+            <div
+              className="absolute inset-0 pointer-events-none opacity-60 z-10"
+              style={{ background: `radial-gradient(circle at ${mousePosition.x * 100}% ${mousePosition.y * 100}%, rgba(255, 255, 255, 0.15) 0%, transparent 50%)` }}
+            />
+          )}
+
+          <div className="absolute top-2 left-2 z-20">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg blur opacity-50" />
+              <div className="relative px-2 py-0.5 rounded-lg bg-gradient-to-r from-violet-600/90 to-purple-600/90 backdrop-blur-md text-[10px] font-bold text-white border border-white/20 shadow-lg">
+                #{rank}
+              </div>
             </div>
           </div>
-          <div><SidebarLink link={{ label: "Settings", href: "#", icon: <Settings className="text-neutral-200 h-5 w-5 flex-shrink-0" /> }} /></div>
-        </SidebarBody>
-      </Sidebar>
 
-      <div className="flex-1 flex flex-col h-full overflow-hidden bg-neutral-950 relative">
-         <div className="absolute inset-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay pointer-events-none"></div>
+          <div className="absolute top-2 right-2 z-20">
+            <div className="px-2 py-0.5 rounded-lg bg-black/70 backdrop-blur-md text-[10px] font-bold text-amber-400 flex items-center gap-1 border border-white/10 shadow-lg">
+              <Star size={9} fill="currentColor" />
+              <span>{item.vote_average?.toFixed(1) || 'N/A'}</span>
+            </div>
+          </div>
 
-         <main className="flex-1 overflow-y-auto p-4 md:p-8 z-10 scrollbar-hide">
-            {/* VIEW: SELECTION (Replaced with Radial Timeline) */}
-            {view === 'selection' && (
-              <div className="w-full h-full flex flex-col">
-                 <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-2xl font-bold text-white">Exploration Mode</h2>
-                    <span className="text-xs text-neutral-500 uppercase tracking-widest">Orbital System Active</span>
-                 </div>
-                 <div className="flex-1 relative rounded-3xl overflow-hidden border border-white/5 bg-black/20">
-                    <RadialOrbitalTimeline timelineData={vibeTimelineData} onSelectVibe={(vibe) => fetchMovies(vibe, 0)} />
-                 </div>
-              </div>
-            )}
-
-            {/* VIEW: RESULTS */}
-            {view === 'results' && (
-              <div className="animate-fade-in w-full max-w-7xl mx-auto">
-                <div className="flex items-center justify-between mb-8 sticky top-0 bg-neutral-950/80 backdrop-blur-lg py-4 z-20 border-b border-white/5">
-                    <div className="flex items-center gap-4">
-                      <button 
-                        onClick={() => setView('selection')} 
-                        className="p-2 hover:bg-white/10 rounded-full transition"
-                        aria-label="Back to selection"
-                      >
-                        <ArrowRight className="rotate-180" />
-                      </button>
-                      <div>
-                        <h2 className="text-2xl font-bold text-white">{selectedVibe?.label}</h2>
-                        <p className="text-sm text-neutral-400">Top 100 Highest Rated • {movies.length} Results</p>
-                      </div>
-                    </div>
-                    {/* NEW CONTENT BUTTON */}
-                    <div className="flex items-center">
-                      <GetStartedButton onClick={handleRefresh} loading={loading} />
-                    </div>
-                </div>
-                {error && (
-                  <div className="mb-4 p-4 bg-red-900/50 border border-red-700 rounded-lg text-red-200">
-                    {error}
-                  </div>
-                )}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 pb-20">
-                    {movies.map((movie, idx) => (
-                      <div 
-                        key={`${movie.id}-${idx}`} 
-                        onClick={() => openMovieDetails(movie)} 
-                        className="group relative bg-neutral-900 border border-white/5 rounded-xl overflow-hidden cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 aspect-[2/3]"
-                        role="button"
-                        tabIndex="0"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            openMovieDetails(movie);
-                          }
-                        }}
-                      >
-                        <div className="absolute top-2 right-2 z-10 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md text-xs font-bold text-yellow-400 flex items-center gap-1 border border-white/10">
-                          <Star size={10} fill="currentColor" /> {movie.vote_average?.toFixed(1) || 'N/A'}
-                        </div>
-                        <div className="absolute top-2 left-2 z-10 bg-indigo-600/80 backdrop-blur-md px-2 py-1 rounded-md text-xs font-bold text-white border border-indigo-500/50">#{(pageOffset * 100) + idx + 1}</div>
-                        <img 
-                          src={movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Image'} 
-                          alt={movie.title || 'Movie poster'} 
-                          className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700" 
-                          loading="lazy" 
-                          onError={(e) => {
-                            e.target.src = 'https://via.placeholder.com/500x750?text=No+Image';
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                          <h3 className="text-white font-semibold text-sm line-clamp-2">{movie.title}</h3>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-                
-                {movies.length === 0 && !loading && (
-                  <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <p className="text-xl text-neutral-400 mb-4">No movies found</p>
-                    <p className="text-neutral-500">Try selecting a different genre or refresh the content</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {loading && (
-              <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-neutral-950/80 backdrop-blur-sm">
-                <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
-                <p className="text-indigo-200 animate-pulse text-lg">Curating {movies.length > 0 ? 'Next Batch' : '100 Masterpieces'}...</p>
-              </div>
-            )}
-         </main>
-      </div>
-
-      <AnimatePresence>
-      {selectedMovie && (
-        <motion.div 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
-          exit={{ opacity: 0 }} 
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-8"
-          aria-modal="true"
-          role="dialog"
-        >
-          <div 
-            className="absolute inset-0 bg-black/80 backdrop-blur-md" 
-            onClick={closeModal} 
-            aria-label="Close modal"
-            role="button"
-            tabIndex="0"
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') closeModal();
-            }}
+          <img
+            src={item.poster_path ? `https://image.tmdb.org/t/p/w342${item.poster_path}` : 'https://via.placeholder.com/342x513?text=No+Image'}
+            alt={item.title || item.name || 'Poster'}
+            className={cn("w-full h-full object-cover transition-all duration-500", isHovered && "scale-110 brightness-75")}
+            loading="lazy"
+            onError={(e) => { e.target.src = 'https://via.placeholder.com/342x513?text=No+Image'; }}
           />
-          <motion.div 
-            initial={{ scale: 0.9, opacity: 0 }} 
-            animate={{ scale: 1, opacity: 1 }} 
-            exit={{ scale: 0.9, opacity: 0 }} 
-            className="relative w-full max-w-5xl h-full max-h-[85vh] bg-neutral-900 rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col md:flex-row"
+
+          <AnimatePresence>
+            {isHovered && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="absolute inset-0 z-15 bg-gradient-to-t from-black via-black/60 to-transparent flex flex-col items-center justify-end p-3"
+              >
+                <motion.h3
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.05 }}
+                  className="text-white font-semibold text-center text-xs line-clamp-2 mb-2 drop-shadow-lg"
+                >
+                  {item.title || item.name}
+                </motion.h3>
+                <motion.span
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                  className="text-neutral-400 text-[9px] mb-2"
+                >
+                  {(item.release_date || item.first_air_date)?.split('-')[0] || 'TBA'}
+                </motion.span>
+                <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.15 }} className="flex items-center gap-2">
+                  <button className="flex items-center gap-1 text-[10px] text-white/90 hover:text-white transition-all px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 hover:border-white/20">
+                    <Info size={10} /> Details
+                  </button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {!isHovered && (
+            <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-black via-black/70 to-transparent flex items-end p-2 z-10">
+              <h3 className="text-white font-medium text-[10px] line-clamp-2 leading-tight">
+                {item.title || item.name}
+              </h3>
+            </div>
+          )}
+        </div>
+      </motion.div>
+
+      <motion.div
+        className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3/4 h-4 rounded-full bg-violet-600/40 blur-xl opacity-0"
+        animate={{ opacity: isHovered ? 1 : 0 }}
+        transition={{ duration: 0.3 }}
+      />
+    </motion.div>
+  );
+};
+
+/**
+ * CONTENT DETAIL MODAL
+ */
+const ContentDetailModal = ({ item, type, isOpen, onClose, accessToken }) => {
+  const [details, setDetails] = useState(null);
+  const [credits, setCredits] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isOpen || !item || !accessToken) return;
+
+    const fetchDetails = async () => {
+      setLoading(true);
+      try {
+        const mediaType = type || (item.media_type === 'tv' ? 'tv' : 'movie');
+
+        const [detailsRes, creditsRes] = await Promise.all([
+          fetch(`https://api.themoviedb.org/3/${mediaType}/${item.id}`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          }),
+          fetch(`https://api.themoviedb.org/3/${mediaType}/${item.id}/credits`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          })
+        ]);
+
+        const detailsData = await detailsRes.json();
+        const creditsData = await creditsRes.json();
+
+        setDetails(detailsData);
+        setCredits(creditsData);
+      } catch (error) {
+        console.error('Failed to fetch details:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDetails();
+  }, [isOpen, item, type, accessToken]);
+
+  if (!isOpen) return null;
+
+  const handleWatch = () => {
+    const mediaType = type || (item.media_type === 'tv' ? 'tv' : 'movie');
+    openInVideasy(mediaType, item.id);
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          onClick={onClose}
+        >
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="relative w-full max-w-5xl max-h-[90vh] bg-neutral-900/95 backdrop-blur-xl rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
           >
-            <button 
-              onClick={closeModal} 
-              className="absolute top-4 right-4 z-20 p-2 bg-black/50 rounded-full text-white hover:bg-white hover:text-black transition"
-              aria-label="Close details"
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 z-20 p-2 rounded-full bg-black/50 text-white/80 hover:text-white hover:bg-black/70 transition-all"
             >
               <X size={20} />
             </button>
-            <div className="w-full md:w-5/12 h-64 md:h-full relative bg-neutral-800">
-               <img 
-                 src={selectedMovie.poster_path ? `https://image.tmdb.org/t/p/original${selectedMovie.poster_path}` : 'https://via.placeholder.com/500x750'} 
-                 alt={selectedMovie.title} 
-                 className="w-full h-full object-cover" 
-                 onError={(e) => {
-                   e.target.src = 'https://via.placeholder.com/500x750?text=No+Image';
-                 }}
-               />
-               <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-transparent to-transparent md:bg-gradient-to-r" />
-            </div>
-            <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-6 bg-neutral-900/50">
-              <div>
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">{selectedMovie.title}</h2>
-                <div className="flex flex-wrap gap-3 text-sm text-neutral-400 mb-4">
-                  <span className="px-2 py-1 bg-white/5 rounded-md border border-white/10">{selectedMovie.release_date?.split('-')[0]}</span>
-                  <span className="flex items-center gap-1 text-yellow-400">
-                    <Star size={14} fill="currentColor" /> {selectedMovie.vote_average?.toFixed(1) || 'N/A'}
-                  </span>
-                  <span className="px-2 py-1 bg-white/5 rounded-md border border-white/10">{selectedMovie.vote_count || 0} votes</span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <Info size={18} className="text-indigo-500" /> Overview
-                </h3>
-                <p className="text-neutral-300 leading-relaxed text-sm md:text-base">
-                  {selectedMovie.overview || "No description available."}
-                </p>
+
+            <div className="overflow-y-auto max-h-[90vh]">
+              {/* Backdrop */}
+              <div className="relative h-72 md:h-96">
+                <img
+                  src={item.backdrop_path ? `https://image.tmdb.org/t/p/w1280${item.backdrop_path}` : item.poster_path ? `https://image.tmdb.org/t/p/w780${item.poster_path}` : 'https://via.placeholder.com/1280x720?text=No+Image'}
+                  alt={item.title || item.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-neutral-900/50 to-transparent" />
               </div>
 
-              {/* REVIEWS SECTION */}
-              <div className="pt-6 border-t border-white/5">
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                  <h3 className="text-lg font-semibold text-white">User Reviews</h3>
-
-                  {/* Review Filters */}
-                  <div className="flex items-center gap-2 bg-neutral-800/50 p-1 rounded-lg border border-white/5">
-                    <button 
-                      onClick={() => setReviewFilter('all')} 
-                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${reviewFilter === 'all' ? 'bg-indigo-600 text-white' : 'text-neutral-400 hover:text-white'}`}
-                    >
-                      All
-                    </button>
-                    <button 
-                      onClick={() => setReviewFilter('good')} 
-                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${reviewFilter === 'good' ? 'bg-green-600/20 text-green-400 border border-green-600/30' : 'text-neutral-400 hover:text-green-400'}`}
-                    >
-                      <ThumbsUp size={12} /> Good
-                    </button>
-                    <button 
-                      onClick={() => setReviewFilter('neutral')} 
-                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${reviewFilter === 'neutral' ? 'bg-yellow-600/20 text-yellow-400 border border-yellow-600/30' : 'text-neutral-400 hover:text-yellow-400'}`}
-                    >
-                      <MinusCircle size={12} /> Neutral
-                    </button>
-                    <button 
-                      onClick={() => setReviewFilter('bad')} 
-                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${reviewFilter === 'bad' ? 'bg-red-600/20 text-red-400 border border-red-600/30' : 'text-neutral-400 hover:text-red-400'}`}
-                    >
-                      <ThumbsDown size={12} /> Bad
-                    </button>
+              {/* Content */}
+              <div className="relative -mt-32 px-6 pb-8">
+                <div className="flex flex-col md:flex-row gap-6">
+                  <div className="w-32 md:w-48 flex-shrink-0">
+                    <img
+                      src={item.poster_path ? `https://image.tmdb.org/t/p/w342${item.poster_path}` : 'https://via.placeholder.com/342x513?text=No+Image'}
+                      alt={item.title || item.name}
+                      className="w-full rounded-xl shadow-2xl border border-white/10"
+                    />
                   </div>
-                </div>
 
-                {/* LOADING INDICATOR */}
-                {reviewsLoading && (
-                   <div className="flex justify-center py-8 animate-fade-in">
-                     <Loader2 className="animate-spin text-indigo-500 w-8 h-8" />
-                   </div>
-                )}
+                  <div className="flex-1">
+                    <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                      {item.title || item.name}
+                    </h1>
 
-                {/* REVIEWS LIST */}
-                {!reviewsLoading && filteredReviews.length > 0 && (
-                  <div className="space-y-4">
-                    {filteredReviews.slice(0, 5).map((review) => (
-                      <div key={review.id} className="bg-neutral-800/50 p-4 rounded-xl border border-white/5 hover:border-white/10 transition">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-bold text-indigo-400 text-sm">@{review.author}</span>
-                          {review.author_details?.rating && (
-                            <span className={`text-xs px-2 py-0.5 rounded font-mono ${review.author_details.rating >= 7 ? 'bg-green-500/10 text-green-500' : review.author_details.rating >= 4 ? 'bg-yellow-500/10 text-yellow-500' : 'bg-red-500/10 text-red-500'}`}>
-                              ★ {review.author_details.rating}/10
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-neutral-400 line-clamp-3 italic">"{review.content}"</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* EMPTY STATE */}
-                {!reviewsLoading && filteredReviews.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <p className="text-neutral-500 italic mb-2">No reviews found for this filter in the current batch.</p>
-                      {reviewsPage < reviewsTotalPages && (
-                         <button 
-                           onClick={loadMoreReviews} 
-                           className="text-xs text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1"
-                         >
-                           Try loading more reviews from page {reviewsPage + 1}... <Loader2 size={10} className="animate-spin" />
-                         </button>
+                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                      <Badge>
+                        <Star size={12} fill="currentColor" className="text-amber-400" />
+                        {item.vote_average?.toFixed(1) || 'N/A'}
+                      </Badge>
+                      {(item.release_date || item.first_air_date) && (
+                        <Badge variant="secondary">
+                          <Calendar size={12} />
+                          {(item.release_date || item.first_air_date)?.split('-')[0]}
+                        </Badge>
                       )}
+                      {details?.runtime && (
+                        <Badge variant="secondary">
+                          <Clock size={12} />
+                          {Math.floor(details.runtime / 60)}h {details.runtime % 60}m
+                        </Badge>
+                      )}
+                    </div>
+
+                    {details?.genres && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {details.genres.map(genre => (
+                          <span key={genre.id} className="px-3 py-1 rounded-full text-xs bg-white/10 text-white/80 border border-white/10">
+                            {genre.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <p className="text-neutral-300 text-sm leading-relaxed mb-6">
+                      {item.overview || 'No overview available.'}
+                    </p>
+
+                    <div className="flex flex-wrap gap-3">
+                      <Button onClick={handleWatch}>
+                        <PlayCircle size={18} />
+                        Watch Now
+                      </Button>
+                    </div>
+
+                    {/* Credits */}
+                    {credits?.cast?.length > 0 && (
+                      <div className="mt-8">
+                        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                          <Users size={18} /> Cast
+                        </h3>
+                        <div className="flex gap-3 overflow-x-auto pb-2">
+                          {credits.cast.slice(0, 8).map(person => (
+                            <div key={person.id} className="flex-shrink-0 w-20 text-center">
+                              <img
+                                src={person.profile_path ? `https://image.tmdb.org/t/p/w185${person.profile_path}` : 'https://via.placeholder.com/185x278?text=No+Photo'}
+                                alt={person.name}
+                                className="w-16 h-16 rounded-full object-cover mx-auto mb-2 border-2 border-white/10"
+                              />
+                              <p className="text-xs text-white font-medium truncate">{person.name}</p>
+                              <p className="text-[10px] text-neutral-500 truncate">{person.character}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Production Companies */}
+                    {details?.production_companies?.length > 0 && (
+                      <div className="mt-6">
+                        <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
+                          <Building2 size={14} /> Production
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {details.production_companies.slice(0, 5).map(company => (
+                            <span key={company.id} className="px-2 py-1 rounded text-xs bg-white/5 text-neutral-400 border border-white/5">
+                              {company.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-
-                {/* READ MORE EXTERNAL BUTTON */}
-                <div className="mt-6 flex justify-center">
-                  <a
-                    href={`https://www.themoviedb.org/movie/${selectedMovie.id}/reviews`}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="flex items-center gap-2 text-sm font-medium text-neutral-400 hover:text-white transition-colors px-4 py-2 rounded-lg hover:bg-white/5"
-                  >
-                    Read all reviews on TMDB <ExternalLink size={14} />
-                  </a>
                 </div>
-
               </div>
             </div>
           </motion.div>
         </motion.div>
       )}
+    </AnimatePresence>
+  );
+};
+
+/**
+ * HOME PAGE
+ */
+const HomePage = ({ accessToken, onShowDetails }) => {
+  const [trendingMovies, setTrendingMovies] = useState([]);
+  const [trendingTV, setTrendingTV] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!accessToken) return;
+
+    const fetchData = async () => {
+      try {
+        const [moviesRes, tvRes] = await Promise.all([
+          fetch('https://api.themoviedb.org/3/trending/movie/day', {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          }),
+          fetch('https://api.themoviedb.org/3/trending/tv/day', {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          })
+        ]);
+
+        const moviesData = await moviesRes.json();
+        const tvData = await tvRes.json();
+
+        setTrendingMovies(moviesData.results || []);
+        setTrendingTV(tvData.results || []);
+      } catch (error) {
+        console.error('Failed to fetch trending:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [accessToken]);
+
+  const categories = Object.values(CONTENT_CATEGORIES);
+
+  return (
+    <div className="p-8">
+      <div className="mb-10">
+        <h1 className="text-4xl font-bold text-white mb-2">
+          Welcome to <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-purple-400">Zylmia</span>
+        </h1>
+        <p className="text-neutral-400">Discover your next favorite entertainment</p>
+      </div>
+
+      {/* Category Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-12">
+        {categories.map((cat) => {
+          const Icon = cat.icon;
+          return (
+            <Link
+              key={cat.id}
+              to={`/${cat.id}`}
+              className={`group relative p-6 rounded-2xl bg-gradient-to-br ${cat.gradient} overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl`}
+            >
+              <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors" />
+              <div className="relative z-10">
+                <Icon className="w-10 h-10 text-white mb-4" />
+                <h3 className="text-white font-bold text-lg">{cat.label}</h3>
+                <p className="text-white/70 text-xs mt-1">{cat.description}</p>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Trending Movies */}
+      <section className="mb-12">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+            <Flame className="text-orange-500" /> Trending Movies
+          </h2>
+          <Link to="/movies" className="text-violet-400 hover:text-violet-300 text-sm flex items-center gap-1">
+            View All <ArrowRight size={14} />
+          </Link>
+        </div>
+        <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
+          {trendingMovies.slice(0, 10).map((movie, idx) => (
+            <ContentCard key={movie.id} item={movie} rank={idx + 1} onDetails={onShowDetails} />
+          ))}
+        </div>
+      </section>
+
+      {/* Trending TV */}
+      <section className="mb-12">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+            <TrendingUp className="text-cyan-500" /> Trending TV Shows
+          </h2>
+          <Link to="/tvshows" className="text-violet-400 hover:text-violet-300 text-sm flex items-center gap-1">
+            View All <ArrowRight size={14} />
+          </Link>
+        </div>
+        <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
+          {trendingTV.slice(0, 10).map((show, idx) => (
+            <ContentCard key={show.id} item={show} rank={idx + 1} onDetails={onShowDetails} />
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+};
+
+/**
+ * CATEGORY PAGE
+ */
+const CategoryPage = ({ category, accessToken, onShowDetails }) => {
+  const [content, setContent] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showIntro, setShowIntro] = useState(true);
+  const [trendingItems, setTrendingItems] = useState([]);
+
+  const config = CONTENT_CATEGORIES[category];
+
+  useEffect(() => {
+    if (!accessToken || !config) return;
+
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        let url = `https://api.themoviedb.org/3${config.endpoints.discover}?sort_by=popularity.desc`;
+
+        if (config.params) {
+          Object.entries(config.params).forEach(([key, value]) => {
+            url += `&${key}=${value}`;
+          });
+        }
+
+        const response = await fetch(url, {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        const data = await response.json();
+        setContent(data.results || []);
+        setTrendingItems(data.results?.slice(0, 10) || []);
+      } catch (error) {
+        console.error('Failed to fetch category content:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [category, accessToken, config]);
+
+  if (!config) return <div className="p-8 text-white">Category not found</div>;
+
+  const Icon = config.icon;
+
+  return (
+    <>
+      <AnimatePresence>
+        {showIntro && trendingItems.length > 0 && (
+          <PageIntroAnimation
+            categoryLabel={config.label}
+            categoryDescription={config.description}
+            gradient={config.gradient}
+            trendingItems={trendingItems}
+            onEnter={() => setShowIntro(false)}
+            onCardClick={(item) => {
+              setShowIntro(false);
+              onShowDetails(item, config.type);
+            }}
+          />
+        )}
       </AnimatePresence>
 
-      <style>{`
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; }
-        .perspective-1000 { perspective: 1000px; }
-        .preserve-3d { transform-style: preserve-3d; }
-        .animate-spin-slow { animation: spin 60s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .animate-in { animation-duration: 0.3s; }
-        .fade-in { animation-name: fadeIn; }
-        .zoom-in-95 { animation-name: zoomIn95; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes zoomIn95 { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-      `}</style>
+      {!showIntro && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="p-8"
+        >
+          <div className="mb-8">
+            <div className="flex items-center gap-4 mb-2">
+              <div className={`p-3 rounded-xl bg-gradient-to-br ${config.gradient}`}>
+                <Icon className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold text-white">{config.label}</h1>
+                <p className="text-neutral-400">{config.description}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
+            {content.map((item, idx) => (
+              <ContentCard
+                key={item.id}
+                item={item}
+                rank={idx + 1}
+                onDetails={(i) => onShowDetails(i, config.type)}
+              />
+            ))}
+          </div>
+        </motion.div>
+      )}
+    </>
+  );
+};
+
+/**
+ * APP LAYOUT
+ */
+const AppLayout = ({ children, accessToken }) => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  return (
+    <div className="min-h-screen relative">
+      <AnimatedBackground />
+      <NavigationSidebar isOpen={sidebarOpen} onToggle={setSidebarOpen} />
+      <main
+        className="relative z-10 transition-all duration-300"
+        style={{ marginLeft: sidebarOpen ? 280 : 80 }}
+      >
+        {children}
+      </main>
     </div>
+  );
+};
+
+/**
+ * MAIN APP COMPONENT
+ */
+export default function App() {
+  const [accessToken] = useState(() => process.env.REACT_APP_TMDB_ACCESS_TOKEN || '');
+  const [showLanding, setShowLanding] = useState(true);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedType, setSelectedType] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+
+  const handleShowDetails = (item, type) => {
+    setSelectedItem(item);
+    setSelectedType(type);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedItem(null);
+    setSelectedType(null);
+  };
+
+  if (showLanding) {
+    return <LandingBanner onEnter={() => setShowLanding(false)} />;
+  }
+
+  return (
+    <BrowserRouter>
+      <AppLayout accessToken={accessToken}>
+        <Routes>
+          <Route path="/" element={<HomePage accessToken={accessToken} onShowDetails={handleShowDetails} />} />
+          <Route path="/home" element={<HomePage accessToken={accessToken} onShowDetails={handleShowDetails} />} />
+          <Route path="/movies" element={<CategoryPage category="movies" accessToken={accessToken} onShowDetails={handleShowDetails} />} />
+          <Route path="/tvshows" element={<CategoryPage category="tvshows" accessToken={accessToken} onShowDetails={handleShowDetails} />} />
+          <Route path="/anime" element={<CategoryPage category="anime" accessToken={accessToken} onShowDetails={handleShowDetails} />} />
+          <Route path="/kdrama" element={<CategoryPage category="kdrama" accessToken={accessToken} onShowDetails={handleShowDetails} />} />
+          <Route path="/jdrama" element={<CategoryPage category="jdrama" accessToken={accessToken} onShowDetails={handleShowDetails} />} />
+        </Routes>
+
+        <ContentDetailModal
+          item={selectedItem}
+          type={selectedType}
+          isOpen={showModal}
+          onClose={handleCloseModal}
+          accessToken={accessToken}
+        />
+      </AppLayout>
+    </BrowserRouter>
   );
 }

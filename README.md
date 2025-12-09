@@ -36,17 +36,20 @@ or if using yarn:
 yarn install
 ```
 
-4. Create a `.env` file in the root directory (optional for local development):
+4. Create a `.env` file in the root directory:
 
 ```env
-REACT_APP_TMDB_API_KEY=your_tmdb_api_key_here
+REACT_APP_TMDB_ACCESS_TOKEN=your_tmdb_read_access_token_here
 ```
 
 ## Configuration
 
-1. Get your free API key from [The Movie Database (TMDb)](https://www.themoviedb.org/settings/api)
-2. The app will prompt you for your API key when you first launch it
-3. Optionally, you can set the API key in environment variables as shown in the installation section
+1. Get your free API Read Access Token from [The Movie Database (TMDb) Settings](https://www.themoviedb.org/settings/api)
+2. Copy the "API Read Access Token" (NOT the API Key) from your TMDB settings
+3. Create a `.env` file in the project root (you can copy from `.env.example`)
+4. Add your access token to the `.env` file
+
+**Important**: The application requires the `.env` file with a valid TMDB access token to function properly.
 
 ## Running the Application
 
@@ -106,7 +109,8 @@ This will create a `build` directory with optimized assets ready for deployment 
 
 ## Security
 
-- API keys are stored locally in the browser's localStorage (not sent to any server)
+- API access token is stored in environment variables (`.env` file)
+- The `.env` file is gitignored and should never be committed to version control
 - All API calls are made directly from the browser to TMDB's servers
 - No user data is stored on any backend
 

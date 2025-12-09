@@ -1,20 +1,765 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================
+   ZYLMIA - PREMIUM STREAMING UI DESIGN SYSTEM
+   21st.dev Inspired - Cinematic Experience
+   ============================================ */
+
+:root {
+  /* Primary HSL Colors for better harmony */
+  --hue-primary: 262;
+  --color-primary: hsl(262, 83%, 66%);
+  --color-primary-light: hsl(262, 83%, 76%);
+  --color-primary-dark: hsl(262, 83%, 46%);
+  --color-primary-rgb: 139, 92, 246;
+
+  /* Accent Colors - Curated palette */
+  --color-accent-cyan: hsl(187, 93%, 43%);
+  --color-accent-pink: hsl(330, 81%, 60%);
+  --color-accent-emerald: hsl(160, 84%, 39%);
+  --color-accent-amber: hsl(38, 92%, 50%);
+  --color-accent-rose: hsl(350, 89%, 60%);
+
+  /* Background layers */
+  --color-bg-base: #030305;
+  --color-bg-primary: #0A0A0F;
+  --color-bg-secondary: #0F0F15;
+  --color-bg-tertiary: #15151D;
+  --color-surface: rgba(255, 255, 255, 0.02);
+  --color-surface-elevated: rgba(255, 255, 255, 0.04);
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-border-highlight: rgba(255, 255, 255, 0.12);
+
+  /* Text Colors - Better contrast */
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #64748B;
+  --color-text-dim: #475569;
+
+  /* Glass effects */
+  --glass-bg: rgba(15, 15, 25, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: 24px;
+
+  /* Enhanced Shadows */
+  --shadow-glow-xs: 0 0 10px rgba(var(--color-primary-rgb), 0.1);
+  --shadow-glow-sm: 0 0 20px rgba(var(--color-primary-rgb), 0.15);
+  --shadow-glow-md: 0 0 40px rgba(var(--color-primary-rgb), 0.25);
+  --shadow-glow-lg: 0 0 80px rgba(var(--color-primary-rgb), 0.35);
+  --shadow-glow-xl: 0 0 120px rgba(var(--color-primary-rgb), 0.4);
+
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-card-hover: 0 12px 48px rgba(0, 0, 0, 0.5), 0 0 40px rgba(var(--color-primary-rgb), 0.1);
+
+  /* Transitions - Smooth easing */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out-circ: cubic-bezier(0.85, 0, 0.15, 1);
+
+  --transition-fast: 150ms var(--ease-out-expo);
+  --transition-normal: 300ms var(--ease-out-expo);
+  --transition-slow: 500ms var(--ease-out-expo);
+  --transition-slower: 800ms var(--ease-out-expo);
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow: hidden; /* Prevent default scrollbars, as the app handles its own */
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* Selection Style */
+::selection {
+  background: rgba(139, 92, 246, 0.3);
+  color: #FFFFFF;
+}
+
+/* ============================================
+   SCROLLBAR STYLES
+   ============================================ */
+
+/* Webkit Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  transition: background var(--transition-fast);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Firefox Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+/* Hide scrollbar class */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: clamp(2rem, 5vw, 4rem);
+}
+
+h2 {
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+h3 {
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: 'SF Mono', 'Fira Code', Monaco, Consolas, monospace;
 }
 
-/* Custom scrollbar styles can go here if needed */
+/* ============================================
+   GLASS MORPHISM UTILITIES
+   ============================================ */
+
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-hover {
+  transition: all var(--transition-normal);
+}
+
+.glass-hover:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* ============================================
+   GRADIENT UTILITIES
+   ============================================ */
+
+.gradient-text {
+  background: linear-gradient(135deg, #FFFFFF 0%, #A78BFA 50%, #FFFFFF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-animated {
+  background: linear-gradient(90deg,
+      #FFFFFF 0%,
+      #8B5CF6 25%,
+      #EC4899 50%,
+      #8B5CF6 75%,
+      #FFFFFF 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 3s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% center;
+  }
+
+  50% {
+    background-position: 100% center;
+  }
+
+  100% {
+    background-position: 0% center;
+  }
+}
+
+@keyframes mesh-gradient {
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.gradient-border {
+  position: relative;
+  background: var(--color-bg-secondary);
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.5), rgba(236, 72, 153, 0.5));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ============================================
+   GLOW EFFECTS
+   ============================================ */
+
+.glow-sm {
+  box-shadow: var(--shadow-glow-sm);
+}
+
+.glow-md {
+  box-shadow: var(--shadow-glow-md);
+}
+
+.glow-lg {
+  box-shadow: var(--shadow-glow-lg);
+}
+
+.glow-hover:hover {
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.35);
+}
+
+.glow-text {
+  text-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+}
+
+/* ============================================
+   BUTTON STYLES
+   ============================================ */
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(139, 92, 246, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-primary);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ============================================
+   CARD STYLES
+   ============================================ */
+
+.card {
+  background: var(--color-surface);
+  border-radius: 16px;
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  transition: all var(--transition-normal);
+}
+
+.card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-4px);
+}
+
+.card-glow:hover {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4),
+    0 0 40px rgba(139, 92, 246, 0.1);
+}
+
+/* ============================================
+   PREMIUM ANIMATION UTILITIES
+   21st.dev Inspired
+   ============================================ */
+
+/* Mesh gradient animation for backgrounds */
+@keyframes mesh-gradient {
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes mesh-float {
+
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  25% {
+    transform: translate(10px, -10px) rotate(2deg);
+  }
+
+  50% {
+    transform: translate(-5px, 5px) rotate(-1deg);
+  }
+
+  75% {
+    transform: translate(-10px, -5px) rotate(1deg);
+  }
+}
+
+/* Spotlight/torch effect */
+@keyframes spotlight {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Shimmer effect for loading and hover */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Border glow animation */
+@keyframes border-glow {
+
+  0%,
+  100% {
+    border-color: rgba(139, 92, 246, 0.2);
+  }
+
+  50% {
+    border-color: rgba(139, 92, 246, 0.5);
+  }
+}
+
+/* Breathing glow effect */
+@keyframes breathe {
+
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+}
+
+/* Standard animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(var(--color-primary-rgb), 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 50px rgba(var(--color-primary-rgb), 0.6);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-12px) rotate(1deg);
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Aurora/Northern light effect */
+@keyframes aurora {
+
+  0%,
+  100% {
+    background-position: 50% 50%, 50% 50%;
+    filter: hue-rotate(0deg);
+  }
+
+  25% {
+    background-position: 60% 40%, 40% 60%;
+  }
+
+  50% {
+    background-position: 40% 60%, 60% 40%;
+    filter: hue-rotate(10deg);
+  }
+
+  75% {
+    background-position: 45% 55%, 55% 45%;
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.animate-fade-in-down {
+  animation: fadeInDown 0.5s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.5s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.5s ease-out forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 60s linear infinite;
+}
+
+/* Animation Delays */
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+.delay-300 {
+  animation-delay: 300ms;
+}
+
+.delay-400 {
+  animation-delay: 400ms;
+}
+
+.delay-500 {
+  animation-delay: 500ms;
+}
+
+/* ============================================
+   3D TRANSFORMS
+   ============================================ */
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.rotate-y-hover:hover {
+  transform: rotateY(5deg);
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+
+.skeleton {
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0.05) 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      rgba(255, 255, 255, 0.05) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ============================================
+   FOCUS STATES (ACCESSIBILITY)
+   ============================================ */
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   MEDIA QUERIES
+   ============================================ */
+
+@media (max-width: 768px) {
+  :root {
+    font-size: 14px;
+  }
+
+  .glass {
+    backdrop-filter: blur(10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================
+   CUSTOM UTILITIES
+   ============================================ */
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.aspect-poster {
+  aspect-ratio: 2 / 3;
+}
+
+.aspect-banner {
+  aspect-ratio: 16 / 9;
+}
+
+/* Backdrop blur issue fix for Safari */
+@supports (-webkit-touch-callout: none) {
+  .glass {
+    background: rgba(15, 15, 15, 0.9);
+  }
+}
