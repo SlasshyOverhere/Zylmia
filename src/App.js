@@ -5,10 +5,14 @@ import {
   Home, Film, Tv, Sparkles, Heart, Globe2, Star, Info, X,
   ArrowRight, ChevronDown, Flame, Calendar, Users, Clock,
   Building2, Languages, DollarSign, PlayCircle, ExternalLink, TrendingUp,
-  Menu
+  Menu, Pin, Bookmark, MapPin
 } from 'lucide-react';
 import PageIntroAnimation from './components/ui/page-intro-animation';
 import DetailIntroAnimation from './components/ui/detail-intro-animation';
+import LatestReleasesPage from './components/pages/LatestReleasesPage';
+import UpcomingReleasesPage from './components/pages/UpcomingReleasesPage';
+import WatchlistPage, { isPinned, togglePin } from './components/pages/WatchlistPage';
+import RegionalReleasesPage from './components/pages/RegionalReleasesPage';
 
 /**
  * UTILITY FUNCTIONS
@@ -339,6 +343,10 @@ const NavigationSidebar = ({ isOpen, onToggle, isMobile }) => {
 
   const navItems = [
     { path: '/home', label: 'Home', icon: Home, accent: 'violet' },
+    { path: '/latest', label: 'Latest', icon: Clock, accent: 'emerald', isNew: true },
+    { path: '/upcoming', label: 'Upcoming', icon: Calendar, accent: 'orange', isNew: true },
+    { path: '/regional', label: 'My Region', icon: MapPin, accent: 'cyan', isNew: true },
+    { path: '/watchlist', label: 'Watchlist', icon: Pin, accent: 'pink', isNew: true },
     { path: '/movies', label: 'Movies', icon: Film, accent: 'violet' },
     { path: '/tvshows', label: 'TV Shows', icon: Tv, accent: 'cyan' },
     { path: '/anime', label: 'Anime', icon: Sparkles, accent: 'pink' },
@@ -352,6 +360,7 @@ const NavigationSidebar = ({ isOpen, onToggle, isMobile }) => {
     pink: { bg: 'from-pink-500/20 to-rose-500/20', border: 'border-pink-500/30', text: 'text-pink-400', glow: 'rgba(236, 72, 153, 0.3)' },
     emerald: { bg: 'from-emerald-500/20 to-teal-500/20', border: 'border-emerald-500/30', text: 'text-emerald-400', glow: 'rgba(16, 185, 129, 0.3)' },
     amber: { bg: 'from-amber-500/20 to-orange-500/20', border: 'border-amber-500/30', text: 'text-amber-400', glow: 'rgba(245, 158, 11, 0.3)' },
+    orange: { bg: 'from-orange-500/20 to-amber-500/20', border: 'border-orange-500/30', text: 'text-orange-400', glow: 'rgba(249, 115, 22, 0.3)' },
   };
 
   const handleNavClick = () => {
@@ -414,42 +423,61 @@ const NavigationSidebar = ({ isOpen, onToggle, isMobile }) => {
           </div>
 
           <nav className="flex-1 px-2 md:px-3 py-3 md:py-4 space-y-1 overflow-y-auto">
-            {navItems.map((item) => {
+            {navItems.map((item, idx) => {
               const isActive = location.pathname === item.path;
               const Icon = item.icon;
               const colors = accentColors[item.accent];
 
+              // Add separator before "Movies" (first recommendation item)
+              const showSeparator = item.path === '/movies';
+
               return (
-                <Link key={item.path} to={item.path} className="block relative" onClick={handleNavClick}>
-                  <motion.div
-                    className={cn(
-                      "flex items-center gap-3 px-3 md:px-4 py-3 rounded-xl transition-all duration-300 relative overflow-hidden",
-                      isActive
-                        ? `bg-gradient-to-r ${colors.bg} ${colors.border} border`
-                        : "text-neutral-400 hover:text-white hover:bg-white/5 border border-transparent active:bg-white/10"
-                    )}
-                    whileHover={!isMobile ? { x: 4 } : {}}
-                    whileTap={{ scale: 0.98 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {isActive && (
-                      <motion.div
-                        layoutId="activeIndicator"
-                        className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full"
-                        style={{ background: `linear-gradient(to bottom, ${colors.glow}, transparent)` }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                      />
-                    )}
-                    <Icon className={cn("w-5 h-5 flex-shrink-0 transition-colors", isActive ? colors.text : "text-neutral-500")} />
-                    <motion.span
-                      animate={{ opacity: (isMobile || isOpen) ? 1 : 0, x: (isMobile || isOpen) ? 0 : -10, width: (isMobile || isOpen) ? 'auto' : 0 }}
+                <React.Fragment key={item.path}>
+                  {showSeparator && (isMobile || isOpen) && (
+                    <div className="py-2 px-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-px flex-1 bg-white/10" />
+                        <span className="text-[10px] text-neutral-500 uppercase tracking-wider">Discover</span>
+                        <div className="h-px flex-1 bg-white/10" />
+                      </div>
+                    </div>
+                  )}
+                  <Link to={item.path} className="block relative" onClick={handleNavClick}>
+                    <motion.div
+                      className={cn(
+                        "flex items-center gap-3 px-3 md:px-4 py-3 rounded-xl transition-all duration-300 relative overflow-hidden",
+                        isActive
+                          ? `bg-gradient-to-r ${colors.bg} ${colors.border} border`
+                          : "text-neutral-400 hover:text-white hover:bg-white/5 border border-transparent active:bg-white/10"
+                      )}
+                      whileHover={!isMobile ? { x: 4 } : {}}
+                      whileTap={{ scale: 0.98 }}
                       transition={{ duration: 0.2 }}
-                      className={cn("font-medium whitespace-nowrap overflow-hidden text-sm md:text-base", isActive ? "text-white" : "")}
                     >
-                      {item.label}
-                    </motion.span>
-                  </motion.div>
-                </Link>
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeIndicator"
+                          className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full"
+                          style={{ background: `linear-gradient(to bottom, ${colors.glow}, transparent)` }}
+                          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                        />
+                      )}
+                      <Icon className={cn("w-5 h-5 flex-shrink-0 transition-colors", isActive ? colors.text : "text-neutral-500")} />
+                      <motion.span
+                        animate={{ opacity: (isMobile || isOpen) ? 1 : 0, x: (isMobile || isOpen) ? 0 : -10, width: (isMobile || isOpen) ? 'auto' : 0 }}
+                        transition={{ duration: 0.2 }}
+                        className={cn("font-medium whitespace-nowrap overflow-hidden text-sm md:text-base flex items-center gap-2", isActive ? "text-white" : "")}
+                      >
+                        {item.label}
+                        {item.isNew && (
+                          <span className="px-1.5 py-0.5 text-[8px] font-bold bg-gradient-to-r from-pink-500 to-rose-500 rounded text-white uppercase">
+                            New
+                          </span>
+                        )}
+                      </motion.span>
+                    </motion.div>
+                  </Link>
+                </React.Fragment>
               );
             })}
           </nav>
@@ -480,101 +508,224 @@ const NavigationSidebar = ({ isOpen, onToggle, isMobile }) => {
 };
 
 /**
- * CONTENT CARD - Optimized for Performance
- * Uses CSS transitions instead of Framer Motion for smooth scrolling
+ * CONTENT CARD - Premium 3D Design
+ * Features: 3D tilt effect, glassmorphism, smooth animations, larger readable text
  */
-const ContentCard = React.memo(({ item, rank, onDetails }) => {
+const ContentCard = React.memo(({ item, rank, onDetails, showPinButton = true }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [pinned, setPinned] = useState(() => isPinned(item.id));
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const cardRef = useRef(null);
+
+  // Check if this is a TV show
+  const isTvShow = !!item.first_air_date;
 
   const handleClick = useCallback(() => {
     onDetails(item);
   }, [item, onDetails]);
 
+  const handlePinToggle = useCallback((e) => {
+    e.stopPropagation();
+    const newPinnedState = togglePin(item);
+    setPinned(newPinnedState);
+  }, [item]);
+
+  // 3D Tilt effect
+  const handleMouseMove = useCallback((e) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    setTilt({
+      x: (y - 0.5) * 15, // Tilt on X axis
+      y: (x - 0.5) * -15 // Tilt on Y axis
+    });
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setIsHovered(false);
+    setTilt({ x: 0, y: 0 });
+  }, []);
+
   return (
     <div
-      className="group relative aspect-[2/3] cursor-pointer content-card"
+      ref={cardRef}
+      className="group relative aspect-[2/3] cursor-pointer perspective-1000"
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
       onClick={handleClick}
+      style={{ perspective: '1000px' }}
     >
+      {/* 3D Card Container */}
       <div
-        className={cn(
-          "relative w-full h-full rounded-lg overflow-hidden transition-transform duration-200 ease-out",
-          isHovered && "scale-[1.03] -translate-y-1"
-        )}
+        className="relative w-full h-full transition-all duration-300 ease-out"
+        style={{
+          transform: isHovered
+            ? `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale(1.05)`
+            : 'rotateX(0) rotateY(0) scale(1)',
+          transformStyle: 'preserve-3d'
+        }}
       >
-        {/* Gradient Border on Hover */}
+        {/* Glow Effect */}
         <div
           className={cn(
-            "absolute -inset-[1px] rounded-lg transition-opacity duration-200",
-            isHovered ? "opacity-100" : "opacity-0"
+            "absolute -inset-3 rounded-2xl blur-xl transition-opacity duration-500",
+            isHovered ? "opacity-60" : "opacity-0"
           )}
           style={{
-            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.6) 0%, rgba(236, 72, 153, 0.4) 50%, rgba(6, 182, 212, 0.6) 100%)'
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.5), rgba(236, 72, 153, 0.3), rgba(6, 182, 212, 0.5))',
           }}
         />
 
-        <div className="absolute inset-[1px] rounded-lg overflow-hidden bg-neutral-900">
-          {/* Rank Badge */}
-          <div className="absolute top-1.5 left-1.5 z-20">
-            <div className="px-1.5 py-0.5 rounded bg-gradient-to-r from-violet-600/90 to-purple-600/90 backdrop-blur-sm text-[9px] font-bold text-white border border-white/20">
+        {/* Main Card */}
+        <div className="absolute inset-0 rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-neutral-900">
+          {/* Animated Border Gradient */}
+          <div
+            className={cn(
+              "absolute inset-0 rounded-xl transition-opacity duration-300",
+              isHovered ? "opacity-100" : "opacity-0"
+            )}
+            style={{
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.8), rgba(236, 72, 153, 0.6), rgba(6, 182, 212, 0.8))',
+              padding: '2px',
+              WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+              WebkitMaskComposite: 'xor',
+              maskComposite: 'exclude'
+            }}
+          />
+
+          {/* Pin Button - Premium Style */}
+          {isTvShow && showPinButton && (
+            <button
+              onClick={handlePinToggle}
+              className={cn(
+                "absolute top-3 left-3 z-30 p-2 rounded-xl transition-all duration-300",
+                pinned
+                  ? "bg-gradient-to-br from-pink-500 to-rose-600 text-white shadow-lg shadow-pink-500/30 scale-100"
+                  : "bg-black/40 backdrop-blur-md text-white/60 hover:text-white hover:bg-black/60 border border-white/10",
+                isHovered || pinned ? "opacity-100 scale-100" : "opacity-0 scale-90"
+              )}
+              title={pinned ? "Unpin from Watchlist" : "Pin to Watchlist"}
+              style={{ transform: isHovered ? 'translateZ(30px)' : 'translateZ(0)' }}
+            >
+              <Pin size={14} className={cn(pinned && "fill-current")} />
+            </button>
+          )}
+
+          {/* Rank Badge - 3D Float Effect */}
+          <div
+            className={cn("absolute z-20", isTvShow && showPinButton ? "top-12 left-3" : "top-3 left-3")}
+            style={{ transform: isHovered ? 'translateZ(25px)' : 'translateZ(0)' }}
+          >
+            <div className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-violet-600 to-purple-600 backdrop-blur-sm text-xs font-bold text-white shadow-lg shadow-violet-500/30 border border-violet-400/30">
               #{rank}
             </div>
           </div>
 
-          {/* Rating Badge */}
-          <div className="absolute top-1.5 right-1.5 z-20">
-            <div className="px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-sm text-[9px] font-bold text-amber-400 flex items-center gap-0.5 border border-white/10">
-              <Star size={8} fill="currentColor" />
+          {/* Rating Badge - 3D Float Effect */}
+          <div
+            className="absolute top-3 right-3 z-20"
+            style={{ transform: isHovered ? 'translateZ(25px)' : 'translateZ(0)' }}
+          >
+            <div className="px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md text-xs font-bold text-amber-400 flex items-center gap-1 border border-amber-500/30 shadow-lg">
+              <Star size={12} fill="currentColor" />
               <span>{item.vote_average?.toFixed(1) || 'N/A'}</span>
             </div>
           </div>
 
-          {/* Image */}
+          {/* Poster Image */}
           <img
-            src={item.poster_path ? `https://image.tmdb.org/t/p/w342${item.poster_path}` : 'https://via.placeholder.com/342x513?text=No+Image'}
+            src={item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Image'}
             alt={item.title || item.name || 'Poster'}
             className={cn(
-              "w-full h-full object-cover transition-transform duration-300",
-              isHovered && "scale-110"
+              "w-full h-full object-cover transition-all duration-500",
+              isHovered && "scale-110 brightness-75"
             )}
             loading="lazy"
             decoding="async"
-            onError={(e) => { e.target.src = 'https://via.placeholder.com/342x513?text=No+Image'; }}
+            onError={(e) => { e.target.src = 'https://via.placeholder.com/500x750?text=No+Image'; }}
           />
 
-          {/* Hover Overlay */}
+          {/* Hover Content Overlay */}
           <div
             className={cn(
-              "absolute inset-0 z-15 bg-gradient-to-t from-black via-black/60 to-transparent flex flex-col items-center justify-end p-2 transition-opacity duration-200",
+              "absolute inset-0 z-15 flex flex-col justify-end transition-all duration-300",
               isHovered ? "opacity-100" : "opacity-0"
             )}
+            style={{
+              background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0.2) 70%, transparent 100%)'
+            }}
           >
-            <h3 className="text-white font-semibold text-center text-[10px] line-clamp-2 mb-1 drop-shadow-lg">
-              {item.title || item.name}
-            </h3>
-            <span className="text-neutral-400 text-[8px] mb-1">
-              {(item.release_date || item.first_air_date)?.split('-')[0] || 'TBA'}
-            </span>
-            <button className="flex items-center gap-1 text-[9px] text-white/90 hover:text-white transition-colors px-2 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/10">
-              <Info size={9} /> Details
-            </button>
-          </div>
-
-          {/* Default Title Overlay */}
-          {!isHovered && (
-            <div className="absolute bottom-0 inset-x-0 h-12 bg-gradient-to-t from-black via-black/70 to-transparent flex items-end p-1.5 z-10">
-              <h3 className="text-white font-medium text-[9px] line-clamp-2 leading-tight">
+            <div
+              className="p-4 space-y-3"
+              style={{ transform: isHovered ? 'translateZ(40px) translateY(0)' : 'translateZ(0) translateY(20px)' }}
+            >
+              {/* Title - MUCH LARGER */}
+              <h3 className="text-white font-bold text-lg md:text-xl leading-tight line-clamp-2 drop-shadow-2xl">
                 {item.title || item.name}
               </h3>
+
+              {/* Meta Info */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/10 backdrop-blur-sm text-white/80 text-xs font-medium border border-white/10">
+                  <Calendar size={12} />
+                  {(item.release_date || item.first_air_date)?.split('-')[0] || 'TBA'}
+                </span>
+                {isTvShow && (
+                  <span className="px-2 py-1 rounded-md bg-violet-600/30 backdrop-blur-sm text-violet-300 text-xs font-medium border border-violet-500/30">
+                    TV Series
+                  </span>
+                )}
+              </div>
+
+              {/* Action Button */}
+              <button
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <PlayCircle size={16} />
+                View Details
+              </button>
             </div>
-          )}
+          </div>
+
+          {/* Default Bottom Overlay - LARGER TEXT */}
+          <div
+            className={cn(
+              "absolute bottom-0 inset-x-0 z-10 transition-all duration-300",
+              isHovered ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"
+            )}
+            style={{
+              background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 60%, transparent 100%)'
+            }}
+          >
+            <div className="p-3 pb-4">
+              <h3 className="text-white font-semibold text-sm md:text-base line-clamp-2 leading-snug mb-1">
+                {item.title || item.name}
+              </h3>
+              <span className="text-neutral-400 text-xs">
+                {(item.release_date || item.first_air_date)?.split('-')[0] || 'Coming Soon'}
+              </span>
+            </div>
+          </div>
+
+          {/* Shine Effect on Hover */}
+          <div
+            className={cn(
+              "absolute inset-0 pointer-events-none transition-opacity duration-500",
+              isHovered ? "opacity-30" : "opacity-0"
+            )}
+            style={{
+              background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.2) 45%, transparent 50%)',
+              transform: isHovered ? 'translateX(100%)' : 'translateX(-100%)',
+              transition: 'transform 0.6s ease-out, opacity 0.3s'
+            }}
+          />
         </div>
       </div>
     </div>
   );
 }, (prevProps, nextProps) => {
-  // Custom comparison - only re-render if item.id changes
   return prevProps.item.id === nextProps.item.id && prevProps.rank === nextProps.rank;
 });
 
@@ -846,7 +997,7 @@ const HomePage = ({ accessToken, onShowDetails }) => {
             View All <ArrowRight size={12} className="md:w-3.5 md:h-3.5" />
           </Link>
         </div>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 md:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
           {trendingMovies.slice(0, 10).map((movie, idx) => (
             <ContentCard key={movie.id} item={movie} rank={idx + 1} onDetails={onShowDetails} />
           ))}
@@ -863,7 +1014,7 @@ const HomePage = ({ accessToken, onShowDetails }) => {
             View All <ArrowRight size={12} className="md:w-3.5 md:h-3.5" />
           </Link>
         </div>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2 md:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
           {trendingTV.slice(0, 10).map((show, idx) => (
             <ContentCard key={show.id} item={show} rank={idx + 1} onDetails={onShowDetails} />
           ))}
@@ -1120,7 +1271,7 @@ const CategoryPage = ({ category, accessToken, onShowDetails }) => {
           {/* Content Grid */}
           {!loading && (
             <>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
                 {content.map((item, idx) => (
                   <ContentCard
                     key={item.id}
@@ -1269,6 +1420,10 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage accessToken={accessToken} onShowDetails={handleShowDetails} />} />
           <Route path="/home" element={<HomePage accessToken={accessToken} onShowDetails={handleShowDetails} />} />
+          <Route path="/latest" element={<LatestReleasesPage accessToken={accessToken} onShowDetails={handleShowDetails} />} />
+          <Route path="/upcoming" element={<UpcomingReleasesPage accessToken={accessToken} onShowDetails={handleShowDetails} />} />
+          <Route path="/regional" element={<RegionalReleasesPage accessToken={accessToken} onShowDetails={handleShowDetails} />} />
+          <Route path="/watchlist" element={<WatchlistPage accessToken={accessToken} onShowDetails={handleShowDetails} />} />
           <Route path="/movies" element={<CategoryPage category="movies" accessToken={accessToken} onShowDetails={handleShowDetails} />} />
           <Route path="/tvshows" element={<CategoryPage category="tvshows" accessToken={accessToken} onShowDetails={handleShowDetails} />} />
           <Route path="/anime" element={<CategoryPage category="anime" accessToken={accessToken} onShowDetails={handleShowDetails} />} />
