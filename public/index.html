@@ -3,18 +3,112 @@
 
 <head>
   <meta charset="utf-8" />
-  <link rel="icon"
-    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#000000" />
-  <meta name="description" content="CineVibe - An interactive movie discovery experience" />
-  <title>Zylmia - Movie Discovery</title>
+
+  <!-- PWA Meta Tags -->
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#7c3aed" />
+  <meta name="background-color" content="#0f0a1a" />
+  <meta name="description"
+    content="Zylmia - Your premium streaming companion for movies, TV shows, anime, and more. Track your watchlist and get notified when new episodes release." />
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+  <!-- Icons -->
+  <link rel="icon" type="image/png" href="%PUBLIC_URL%/logo.png" />
+  <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo.png" />
+  <link rel="apple-touch-icon" sizes="192x192" href="%PUBLIC_URL%/logo.png" />
+  <link rel="apple-touch-icon" sizes="512x512" href="%PUBLIC_URL%/logo.png" />
+
+  <!-- iOS PWA Support -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Zylmia" />
+
+  <!-- Windows PWA Support -->
+  <meta name="msapplication-TileColor" content="#7c3aed" />
+  <meta name="msapplication-TileImage" content="%PUBLIC_URL%/logo.png" />
+  <meta name="msapplication-tap-highlight" content="no" />
+
+  <!-- Android PWA Support -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="application-name" content="Zylmia" />
+
+  <!-- Preconnect to external resources -->
+  <link rel="preconnect" href="https://api.themoviedb.org" />
+  <link rel="preconnect" href="https://image.tmdb.org" />
+  <link rel="dns-prefetch" href="https://api.themoviedb.org" />
+  <link rel="dns-prefetch" href="https://image.tmdb.org" />
+
+  <title>Zylmia - Streaming Universe</title>
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- PWA Install Prompt Styles -->
+  <style>
+    /* Splash screen for PWA */
+    .pwa-splash {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #0f0a1a 0%, #1a0a2e 50%, #0f0a1a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 1;
+      transition: opacity 0.3s ease-out;
+    }
+
+    .pwa-splash.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .pwa-splash-logo {
+      width: 120px;
+      height: 120px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.05);
+        opacity: 0.8;
+      }
+    }
+  </style>
 </head>
 
 <body class="bg-neutral-950">
+  <!-- PWA Splash Screen -->
+  <div id="pwa-splash" class="pwa-splash">
+    <img src="%PUBLIC_URL%/logo.png" alt="Zylmia" class="pwa-splash-logo" />
+  </div>
+
   <noscript>You need to enable JavaScript to run this app.</noscript>
   <div id="root"></div>
+
+  <script>
+    // Hide splash screen when app loads
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        var splash = document.getElementById('pwa-splash');
+        if (splash) {
+          splash.classList.add('hidden');
+          setTimeout(function () {
+            splash.remove();
+          }, 300);
+        }
+      }, 500);
+    });
+  </script>
 </body>
 
 </html>
