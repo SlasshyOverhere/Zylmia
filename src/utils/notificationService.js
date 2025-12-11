@@ -7,6 +7,9 @@ const WATCHLIST_KEY = 'zylmia_watchlist';
 const NOTIFICATION_PERMISSION_KEY = 'zylmia_notification_permission';
 const LAST_CHECK_KEY = 'zylmia_last_episode_check';
 
+// Keep-alive interval for background operation
+let keepAliveInterval = null;
+
 /**
  * Check if notifications are supported
  */
@@ -39,6 +42,8 @@ export const requestNotificationPermission = async () => {
         if (permission === 'granted') {
             // Initialize service worker communication
             await initializeServiceWorker();
+            // Start keepalive for background checks
+            startKeepAlive();
         }
 
         return permission;
@@ -72,10 +77,18 @@ export const initializeServiceWorker = async () => {
                 type: 'STORE_TMDB_TOKEN',
                 token: token
             });
+            console.log('Token sent to service worker');
         }
 
         // Sync watchlist with service worker
         syncWatchlistWithSW();
+
+        // Start background checks in service worker
+        if (registration.active) {
+            registration.active.postMessage({
+                type: 'START_BACKGROUND_CHECKS'
+            });
+        }
 
         return registration;
     } catch (error) {
@@ -100,14 +113,19 @@ export const syncWatchlistWithSW = async () => {
                 type: 'SYNC_WATCHLIST',
                 watchlist: watchlist
             });
+            console.log('Watchlist synced with service worker:', watchlist.length, 'items');
         }
 
         // Also store in IndexedDB for background access
         if ('indexedDB' in window) {
-            const db = await openDB();
-            const tx = db.transaction('keyval', 'readwrite');
-            const store = tx.objectStore('keyval');
-            store.put(watchlist, 'watchlist');
+            try {
+                const db = await openDB();
+                const tx = db.transaction('keyval', 'readwrite');
+                const store = tx.objectStore('keyval');
+                store.put(watchlist, 'watchlist');
+            } catch (e) {
+                console.log('IndexedDB sync failed, SW will handle it');
+            }
         }
     } catch (error) {
         console.error('Failed to sync watchlist with SW:', error);
@@ -119,7 +137,7 @@ export const syncWatchlistWithSW = async () => {
  */
 const openDB = () => {
     return new Promise((resolve, reject) => {
-        const request = indexedDB.open('zylmia-sw-db', 1);
+        const request = indexedDB.open('zylmia-sw-db', 2);
         request.onerror = () => reject(request.error);
         request.onsuccess = () => resolve(request.result);
         request.onupgradeneeded = (event) => {
@@ -196,28 +214,82 @@ export const registerBackgroundSync = async () => {
  * Request periodic background sync for regular episode checking
  */
 export const registerPeriodicSync = async () => {
-    if (!('serviceWorker' in navigator) || !('PeriodicSyncManager' in window)) {
-        console.log('Periodic sync not supported');
+    if (!('serviceWorker' in navigator)) {
+        console.log('Service worker not supported');
         return false;
     }
 
     try {
         const registration = await navigator.serviceWorker.ready;
-        const status = await navigator.permissions.query({
-            name: 'periodic-background-sync'
-        });
 
-        if (status.state === 'granted') {
-            await registration.periodicSync.register('check-episodes', {
-                minInterval: 30 * 60 * 1000 // 30 minutes
-            });
-            console.log('Periodic sync registered');
-            return true;
+        // Try periodic sync first (Chrome 80+)
+        if ('periodicSync' in registration) {
+            try {
+                const status = await navigator.permissions.query({
+                    name: 'periodic-background-sync'
+                });
+
+                if (status.state === 'granted') {
+                    await registration.periodicSync.register('check-episodes', {
+                        minInterval: 60 * 60 * 1000 // 1 hour (minimum allowed)
+                    });
+                    console.log('Periodic background sync registered');
+                    return true;
+                } else {
+                    console.log('Periodic sync permission not granted:', status.state);
+                }
+            } catch (e) {
+                console.log('Periodic sync not available:', e.message);
+            }
         }
+
+        // Fallback: Start keepalive for background operation
+        startKeepAlive();
+        return false;
     } catch (error) {
         console.error('Periodic sync registration failed:', error);
+        return false;
     }
-    return false;
+};
+
+/**
+ * Start keepalive ping to keep service worker active
+ * This helps ensure background checks continue running
+ */
+export const startKeepAlive = () => {
+    if (keepAliveInterval) {
+        clearInterval(keepAliveInterval);
+    }
+
+    // Ping the service worker every 5 minutes to keep it alive
+    keepAliveInterval = setInterval(async () => {
+        try {
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.ready;
+                if (registration.active) {
+                    // Send a keepalive ping
+                    registration.active.postMessage({ type: 'KEEPALIVE' });
+
+                    // Also sync watchlist periodically
+                    syncWatchlistWithSW();
+                }
+            }
+        } catch (error) {
+            console.log('Keepalive ping failed:', error);
+        }
+    }, 5 * 60 * 1000); // Every 5 minutes
+
+    console.log('Keepalive started for background operation');
+};
+
+/**
+ * Stop keepalive
+ */
+export const stopKeepAlive = () => {
+    if (keepAliveInterval) {
+        clearInterval(keepAliveInterval);
+        keepAliveInterval = null;
+    }
 };
 
 /**
@@ -227,12 +299,29 @@ export const setupServiceWorkerListener = (onWatchlistRequest) => {
     if (!('serviceWorker' in navigator)) return;
 
     navigator.serviceWorker.addEventListener('message', (event) => {
+        console.log('Message from SW:', event.data?.type);
+
         if (event.data && event.data.type === 'REQUEST_WATCHLIST') {
             // Service worker is requesting updated watchlist
             if (onWatchlistRequest) {
                 onWatchlistRequest();
             } else {
                 syncWatchlistWithSW();
+            }
+        }
+
+        if (event.data && event.data.type === 'REQUEST_TOKEN') {
+            // Service worker is requesting the TMDB token
+            const token = process.env.REACT_APP_TMDB_ACCESS_TOKEN;
+            if (token && event.source) {
+                navigator.serviceWorker.ready.then(registration => {
+                    if (registration.active) {
+                        registration.active.postMessage({
+                            type: 'STORE_TMDB_TOKEN',
+                            token: token
+                        });
+                    }
+                });
             }
         }
     });
@@ -283,6 +372,10 @@ export const initInstallPrompt = () => {
         deferredPrompt = null;
         console.log('PWA was installed');
         window.dispatchEvent(new CustomEvent('pwa-installed'));
+
+        // Initialize background features after install
+        initializeServiceWorker();
+        startKeepAlive();
     });
 };
 
@@ -310,7 +403,8 @@ export const isPWAInstallAvailable = () => {
     return deferredPrompt !== null;
 };
 
-export default {
+// Export all functions
+const notificationService = {
     isNotificationSupported,
     isPWA,
     requestNotificationPermission,
@@ -321,9 +415,14 @@ export default {
     checkForNewEpisodes,
     registerBackgroundSync,
     registerPeriodicSync,
+    startKeepAlive,
+    stopKeepAlive,
     setupServiceWorkerListener,
     createEpisodeNotification,
     initInstallPrompt,
     promptPWAInstall,
     isPWAInstallAvailable
 };
+
+export default notificationService;
+

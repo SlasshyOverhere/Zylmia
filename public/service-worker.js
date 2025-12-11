@@ -1,9 +1,10 @@
 // Zylmia Service Worker
 // Handles caching, offline support, background sync, and push notifications
 
-const CACHE_NAME = 'zylmia-cache-v1';
-const RUNTIME_CACHE = 'zylmia-runtime-v1';
+const CACHE_NAME = 'zylmia-cache-v2';
+const RUNTIME_CACHE = 'zylmia-runtime-v2';
 const NOTIFICATION_CHECK_INTERVAL = 30 * 60 * 1000; // 30 minutes
+const BACKGROUND_CHECK_INTERVAL = 60 * 60 * 1000; // 1 hour for background checks
 
 // Files to cache on install
 const STATIC_ASSETS = [
@@ -14,8 +15,13 @@ const STATIC_ASSETS = [
     '/favicon.png'
 ];
 
+// Keep track of the check timer
+let episodeCheckTimer = null;
+let lastCheckTime = 0;
+
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
+    console.log('[SW] Installing service worker...');
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
@@ -26,8 +32,9 @@ self.addEventListener('install', (event) => {
     );
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches and start background checks
 self.addEventListener('activate', (event) => {
+    console.log('[SW] Activating service worker...');
     event.waitUntil(
         caches.keys()
             .then((cacheNames) => {
@@ -40,10 +47,57 @@ self.addEventListener('activate', (event) => {
             .then(() => self.clients.claim())
             .then(() => {
                 // Start background episode checking
-                startEpisodeCheckAlarm();
+                initializeBackgroundChecks();
+                // Run an initial check
+                scheduleNextCheck(5000); // Check 5 seconds after activation
             })
     );
 });
+
+// Initialize background checking mechanisms
+function initializeBackgroundChecks() {
+    console.log('[SW] Initializing background checks...');
+
+    // Register for periodic background sync (Chrome/Edge)
+    if ('periodicSync' in self.registration) {
+        self.registration.periodicSync.register('check-episodes', {
+            minInterval: BACKGROUND_CHECK_INTERVAL
+        }).then(() => {
+            console.log('[SW] Periodic sync registered successfully');
+        }).catch((error) => {
+            console.log('[SW] Periodic sync registration failed:', error);
+            // Fall back to timer-based approach
+            startTimerBasedChecks();
+        });
+    } else {
+        // Fallback for browsers without periodic sync
+        startTimerBasedChecks();
+    }
+}
+
+// Timer-based checking fallback
+function startTimerBasedChecks() {
+    console.log('[SW] Starting timer-based background checks');
+    // Clear any existing timer
+    if (episodeCheckTimer) {
+        clearInterval(episodeCheckTimer);
+    }
+    // Set up recurring check
+    episodeCheckTimer = setInterval(() => {
+        checkForNewEpisodes();
+    }, NOTIFICATION_CHECK_INTERVAL);
+}
+
+// Schedule the next check with a delay
+function scheduleNextCheck(delay) {
+    setTimeout(() => {
+        const now = Date.now();
+        // Only check if enough time has passed since last check
+        if (now - lastCheckTime >= NOTIFICATION_CHECK_INTERVAL - 60000) {
+            checkForNewEpisodes();
+        }
+    }, delay);
+}
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
@@ -108,8 +162,10 @@ async function networkFirstStrategy(request) {
     }
 }
 
-// Handle push notifications
+// Handle push notifications (for future push server integration)
 self.addEventListener('push', (event) => {
+    console.log('[SW] Push notification received');
+
     if (!event.data) return;
 
     let data;
@@ -127,17 +183,19 @@ self.addEventListener('push', (event) => {
         body: data.body || 'New episode released!',
         icon: data.icon || '/logo.png',
         badge: '/logo.png',
-        vibrate: [100, 50, 100],
+        vibrate: [100, 50, 100, 50, 100],
         data: {
-            url: data.url || '/',
+            url: data.url || '/watchlist',
             ...data
         },
         actions: [
-            { action: 'open', title: 'Open App' },
-            { action: 'dismiss', title: 'Dismiss' }
+            { action: 'open', title: '▶️ Watch Now' },
+            { action: 'dismiss', title: 'Later' }
         ],
         requireInteraction: true,
-        tag: data.tag || 'zylmia-notification'
+        tag: data.tag || 'zylmia-notification',
+        renotify: true,
+        silent: false
     };
 
     event.waitUntil(
@@ -147,11 +205,12 @@ self.addEventListener('push', (event) => {
 
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
+    console.log('[SW] Notification clicked:', event.action);
     event.notification.close();
 
     if (event.action === 'dismiss') return;
 
-    const urlToOpen = event.notification.data?.url || '/';
+    const urlToOpen = event.notification.data?.url || '/watchlist';
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true })
@@ -160,7 +219,9 @@ self.addEventListener('notificationclick', (event) => {
                 for (const client of windowClients) {
                     if (client.url.includes(self.registration.scope) && 'focus' in client) {
                         client.focus();
-                        client.navigate(urlToOpen);
+                        if (client.navigate) {
+                            client.navigate(urlToOpen);
+                        }
                         return;
                     }
                 }
@@ -174,47 +235,59 @@ self.addEventListener('notificationclick', (event) => {
 
 // Handle messages from the main thread
 self.addEventListener('message', (event) => {
+    console.log('[SW] Message received:', event.data?.type);
+
     if (event.data && event.data.type === 'SKIP_WAITING') {
         self.skipWaiting();
     }
 
     if (event.data && event.data.type === 'CHECK_EPISODES') {
-        checkForNewEpisodes();
+        event.waitUntil(checkForNewEpisodes());
     }
 
     if (event.data && event.data.type === 'STORE_TMDB_TOKEN') {
-        // Store token in IndexedDB for background checks
-        storeToken(event.data.token);
+        event.waitUntil(storeToken(event.data.token));
+    }
+
+    if (event.data && event.data.type === 'SYNC_WATCHLIST') {
+        event.waitUntil(storeWatchlist(event.data.watchlist));
+    }
+
+    if (event.data && event.data.type === 'START_BACKGROUND_CHECKS') {
+        initializeBackgroundChecks();
     }
 });
 
-// Start periodic episode checking using alarms (if supported) or setInterval
-function startEpisodeCheckAlarm() {
-    // Use Periodic Background Sync if available
-    if ('periodicSync' in self.registration) {
-        self.registration.periodicSync.register('check-episodes', {
-            minInterval: NOTIFICATION_CHECK_INTERVAL
-        }).catch((error) => {
-            console.log('[SW] Periodic sync registration failed:', error);
-            // Fallback to regular interval
-            setInterval(checkForNewEpisodes, NOTIFICATION_CHECK_INTERVAL);
-        });
-    } else {
-        // Fallback for browsers without periodic sync
-        setInterval(checkForNewEpisodes, NOTIFICATION_CHECK_INTERVAL);
-    }
-}
-
-// Handle periodic sync
+// Handle periodic sync events
 self.addEventListener('periodicsync', (event) => {
+    console.log('[SW] Periodic sync event:', event.tag);
     if (event.tag === 'check-episodes') {
         event.waitUntil(checkForNewEpisodes());
     }
 });
 
+// Handle background sync (for when coming online after being offline)
+self.addEventListener('sync', (event) => {
+    console.log('[SW] Background sync event:', event.tag);
+    if (event.tag === 'check-episodes') {
+        event.waitUntil(checkForNewEpisodes());
+    }
+    if (event.tag === 'sync-watchlist') {
+        event.waitUntil(syncWatchlistFromClients());
+    }
+});
+
+// Sync watchlist from connected clients
+async function syncWatchlistFromClients() {
+    const allClients = await self.clients.matchAll();
+    if (allClients.length > 0) {
+        allClients[0].postMessage({ type: 'REQUEST_WATCHLIST' });
+    }
+}
+
 // IndexedDB helpers for storing TMDB token
 const DB_NAME = 'zylmia-sw-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'keyval';
 
 function openDB() {
@@ -285,10 +358,12 @@ async function storeWatchlist(watchlist) {
         const tx = db.transaction(STORE_NAME, 'readwrite');
         const store = tx.objectStore(STORE_NAME);
         store.put(watchlist, 'watchlist');
+        store.put(Date.now(), 'watchlist_updated');
         await new Promise((resolve, reject) => {
             tx.oncomplete = resolve;
             tx.onerror = () => reject(tx.error);
         });
+        console.log('[SW] Watchlist stored:', watchlist.length, 'items');
     } catch (error) {
         console.error('[SW] Failed to store watchlist:', error);
     }
@@ -315,6 +390,7 @@ async function storeLastCheckedEpisodes(episodes) {
         const tx = db.transaction(STORE_NAME, 'readwrite');
         const store = tx.objectStore(STORE_NAME);
         store.put(episodes, 'last_checked_episodes');
+        store.put(Date.now(), 'last_check_time');
         await new Promise((resolve, reject) => {
             tx.oncomplete = resolve;
             tx.onerror = () => reject(tx.error);
@@ -324,37 +400,67 @@ async function storeLastCheckedEpisodes(episodes) {
     }
 }
 
-// Check for new episodes and send notifications
+async function getLastCheckTime() {
+    try {
+        const db = await openDB();
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const request = store.get('last_check_time');
+        return new Promise((resolve) => {
+            request.onsuccess = () => resolve(request.result || 0);
+            request.onerror = () => resolve(0);
+        });
+    } catch (error) {
+        return 0;
+    }
+}
+
+// Main function to check for new episodes and send notifications
 async function checkForNewEpisodes() {
-    console.log('[SW] Checking for new episodes...');
+    const now = Date.now();
+    const lastCheck = await getLastCheckTime();
+
+    // Prevent checking too frequently (minimum 5 minutes between checks)
+    if (now - lastCheck < 5 * 60 * 1000) {
+        console.log('[SW] Skipping check - too recent. Last check:', new Date(lastCheck).toLocaleString());
+        return;
+    }
+
+    console.log('[SW] Checking for new episodes at', new Date().toLocaleString());
+    lastCheckTime = now;
 
     try {
         const token = await getToken();
         if (!token) {
-            console.log('[SW] No TMDB token available');
+            console.log('[SW] No TMDB token available - requesting from client');
+            // Try to get token from active clients
+            const allClients = await self.clients.matchAll();
+            if (allClients.length > 0) {
+                allClients.forEach(client => {
+                    client.postMessage({ type: 'REQUEST_TOKEN' });
+                });
+            }
             return;
-        }
-
-        // Get watchlist from main thread via broadcast
-        const clients = await self.clients.matchAll();
-        if (clients.length > 0) {
-            // Request fresh watchlist data from client
-            clients[0].postMessage({ type: 'REQUEST_WATCHLIST' });
         }
 
         const watchlist = await getWatchlist();
         if (!watchlist || watchlist.length === 0) {
             console.log('[SW] No items in watchlist');
+            // Schedule next check
+            scheduleNextCheck(NOTIFICATION_CHECK_INTERVAL);
             return;
         }
+
+        console.log('[SW] Checking', watchlist.length, 'items in watchlist');
 
         const lastChecked = await getLastCheckedEpisodes();
         const newLastChecked = { ...lastChecked };
         const notifications = [];
 
-        for (const item of watchlist) {
-            if (item.media_type !== 'tv') continue;
+        // Filter to only TV shows
+        const tvShows = watchlist.filter(item => item.media_type === 'tv');
 
+        for (const item of tvShows) {
             try {
                 const response = await fetch(
                     `https://api.themoviedb.org/3/tv/${item.id}`,
@@ -363,7 +469,10 @@ async function checkForNewEpisodes() {
                     }
                 );
 
-                if (!response.ok) continue;
+                if (!response.ok) {
+                    console.log('[SW] Failed to fetch details for', item.title, response.status);
+                    continue;
+                }
 
                 const details = await response.json();
                 const lastEpisode = details.last_episode_to_air;
@@ -372,12 +481,13 @@ async function checkForNewEpisodes() {
                 // Check if last episode was just released (within 24 hours)
                 if (lastEpisode && lastEpisode.air_date) {
                     const episodeKey = `${item.id}_${lastEpisode.season_number}_${lastEpisode.episode_number}`;
-                    const airDate = new Date(lastEpisode.air_date);
-                    const now = new Date();
-                    const daysSinceAir = (now - airDate) / (1000 * 60 * 60 * 24);
+                    const airDate = new Date(lastEpisode.air_date + 'T00:00:00');
+                    const nowDate = new Date();
+                    const daysSinceAir = (nowDate - airDate) / (1000 * 60 * 60 * 24);
 
-                    // If episode aired today and we haven't notified
+                    // If episode aired within last 24 hours and we haven't notified
                     if (daysSinceAir >= 0 && daysSinceAir <= 1 && !lastChecked[episodeKey]) {
+                        console.log('[SW] New episode found:', item.title, episodeKey);
                         notifications.push({
                             title: `🎬 ${item.title} - New Episode!`,
                             body: `S${lastEpisode.season_number}E${lastEpisode.episode_number}: ${lastEpisode.name || 'New Episode'} is now available!`,
@@ -385,20 +495,21 @@ async function checkForNewEpisodes() {
                             tag: `episode-${episodeKey}`,
                             url: '/watchlist'
                         });
-                        newLastChecked[episodeKey] = true;
+                        newLastChecked[episodeKey] = Date.now();
                     }
                 }
 
                 // Check if next episode is releasing today
                 if (nextEpisode && nextEpisode.air_date) {
                     const episodeKey = `${item.id}_${nextEpisode.season_number}_${nextEpisode.episode_number}_upcoming`;
-                    const airDate = new Date(nextEpisode.air_date);
-                    const now = new Date();
-                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    const airDate = new Date(nextEpisode.air_date + 'T00:00:00');
+                    const nowDate = new Date();
+                    const today = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate());
                     const episodeDate = new Date(airDate.getFullYear(), airDate.getMonth(), airDate.getDate());
 
                     // If episode airs today and we haven't notified
                     if (episodeDate.getTime() === today.getTime() && !lastChecked[episodeKey]) {
+                        console.log('[SW] Episode releasing today:', item.title, episodeKey);
                         notifications.push({
                             title: `📅 ${item.title} - Episode Today!`,
                             body: `S${nextEpisode.season_number}E${nextEpisode.episode_number}: ${nextEpisode.name || 'New Episode'} releases today!`,
@@ -406,12 +517,12 @@ async function checkForNewEpisodes() {
                             tag: `upcoming-${episodeKey}`,
                             url: '/watchlist'
                         });
-                        newLastChecked[episodeKey] = true;
+                        newLastChecked[episodeKey] = Date.now();
                     }
                 }
 
-                // Rate limiting - wait a bit between API calls
-                await new Promise(resolve => setTimeout(resolve, 250));
+                // Rate limiting - wait between API calls
+                await new Promise(resolve => setTimeout(resolve, 300));
             } catch (error) {
                 console.error(`[SW] Failed to check ${item.title}:`, error);
             }
@@ -421,24 +532,48 @@ async function checkForNewEpisodes() {
         await storeLastCheckedEpisodes(newLastChecked);
 
         // Show notifications
+        console.log('[SW] Showing', notifications.length, 'notifications');
         for (const notification of notifications) {
-            await self.registration.showNotification(notification.title, {
-                body: notification.body,
-                icon: notification.icon,
-                badge: '/logo.png',
-                vibrate: [200, 100, 200],
-                data: { url: notification.url },
-                tag: notification.tag,
-                requireInteraction: true,
-                actions: [
-                    { action: 'open', title: 'Watch Now' },
-                    { action: 'dismiss', title: 'Later' }
-                ]
-            });
+            try {
+                await self.registration.showNotification(notification.title, {
+                    body: notification.body,
+                    icon: notification.icon,
+                    badge: '/logo.png',
+                    vibrate: [200, 100, 200, 100, 200],
+                    data: { url: notification.url },
+                    tag: notification.tag,
+                    requireInteraction: true,
+                    renotify: true,
+                    silent: false,
+                    actions: [
+                        { action: 'open', title: '▶️ Watch Now' },
+                        { action: 'dismiss', title: 'Later' }
+                    ]
+                });
+            } catch (notifError) {
+                console.error('[SW] Failed to show notification:', notifError);
+            }
         }
 
         console.log(`[SW] Episode check complete. ${notifications.length} new notifications.`);
+
+        // Schedule next check
+        scheduleNextCheck(NOTIFICATION_CHECK_INTERVAL);
+
     } catch (error) {
         console.error('[SW] Episode check failed:', error);
+        // Schedule retry
+        scheduleNextCheck(5 * 60 * 1000); // Retry in 5 minutes
     }
 }
+
+// Self-wake mechanism - keeps the service worker alive in background
+self.addEventListener('fetch', (event) => {
+    // This helps keep the service worker active
+    if (event.request.url.includes('/sw-keepalive')) {
+        event.respondWith(new Response('OK', { status: 200 }));
+    }
+});
+
+console.log('[SW] Service worker loaded');
+

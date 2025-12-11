@@ -230,13 +230,23 @@ export const NotificationSettings = ({ className = '', onDismiss = null }) => {
 
                         {/* Important Instructions */}
                         <div className="mt-4 p-3 rounded-lg bg-amber-900/20 border border-amber-500/30">
-                            <p className="text-amber-300 text-xs font-medium mb-1">⚠️ Important for Uninterrupted Notifications:</p>
+                            <p className="text-amber-300 text-xs font-medium mb-1">⚠️ Important for Background Notifications:</p>
                             <ul className="text-amber-200/80 text-xs space-y-1 list-disc list-inside">
-                                <li><strong>Windows:</strong> Go to Settings → System → Notifications → Zylmia → Set to "Always Allow"</li>
-                                <li><strong>Android:</strong> Long press app → App Info → Notifications → Enable "Allow notifications"</li>
-                                <li><strong>Chrome:</strong> Click lock icon in URL → Site settings → Enable "Notifications forever"</li>
-                                <li>Keep the app installed as PWA for background notifications</li>
+                                <li><strong>Install as PWA:</strong> Click "Install App" when prompted for background notifications</li>
+                                <li><strong>Keep Running:</strong> Leave the app open in background or as installed PWA</li>
+                                <li><strong>Windows:</strong> Settings → System → Notifications → Enable for Zylmia</li>
+                                <li><strong>Android:</strong> Long press app → Notifications → Allow all</li>
+                                <li><strong>Chrome:</strong> Click lock icon → Site settings → Notifications → Allow</li>
+                                <li><strong>Don't Close Browser:</strong> Background checks run every 30mins when app is open</li>
                             </ul>
+                        </div>
+
+                        {/* Background Status */}
+                        <div className="mt-3 p-2 rounded-lg bg-blue-900/20 border border-blue-500/30">
+                            <p className="text-blue-300 text-xs">
+                                💡 <strong>Tip:</strong> For reliable notifications, install as PWA and keep it running in background.
+                                Checks run automatically every 30 minutes.
+                            </p>
                         </div>
                     </div>
                 </div>
